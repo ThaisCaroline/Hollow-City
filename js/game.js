@@ -120,6 +120,7 @@ class CenaLuta extends Phaser.Scene {
     this.heroiVida = VIDA_HEROI;
     this.vilaoVida = VIDA_VILAO;
     this.fimDeJogo = false;
+    this.musicaIniciada = false; // a trilha começa quando a Morte anda pela primeira vez
     this.emVirada = false;   // modo virada: o herói está abaixo de 30% de vida
     this.piscaOn = false;    // alterna a cor da barra do herói no modo virada
     criarBarrasDeVida(this);
@@ -128,7 +129,6 @@ class CenaLuta extends Phaser.Scene {
     this.teclaSoco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.teclaPulo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     criarControlesDeToque(this);
-    tocarMusica(this, 'musica-luta');
   }
 
   // ---------- herói ----------
@@ -367,7 +367,7 @@ class CenaLuta extends Phaser.Scene {
     if (pediuPulo && !this.heroiNoAr && !this.heroiAtacando) {
       this.heroiNoAr = true;
       this.velocidadeY = -VELOCIDADE_PULO;
-      tocarSomAleatorio(this, SONS_PULO);
+      tocarSomAleatorio(this, SONS_PULO, 1.0);
     }
     if (this.heroiNoAr) {
       this.velocidadeY += GRAVIDADE * (delta / 1000);
@@ -427,6 +427,11 @@ class CenaLuta extends Phaser.Scene {
       this.vilaoParado();
       this.vilaoAtacar();
     } else if (distancia > DISTANCIA_LUTA) {
+      // a trilha começa na primeira vez que a Morte anda
+      if (!this.musicaIniciada) {
+        this.musicaIniciada = true;
+        tocarMusica(this, 'musica-luta');
+      }
       this.vilao.x += direcao * passo(VELOCIDADE_VILAO);
       this.vilao.play('vilao-andar', true);
     } else {
