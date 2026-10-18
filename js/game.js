@@ -1,8 +1,10 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js.
 
 class CenaLuta extends Phaser.Scene {
   preload() {
+    carregarSons(this);
+
     this.load.image('cenario', 'assets/cenario-noite.png');
     this.load.spritesheet('vilao-andar', 'assets/vilao-andar.png', {
       frameWidth: 32,
@@ -126,6 +128,7 @@ class CenaLuta extends Phaser.Scene {
     this.teclaSoco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.teclaPulo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     criarControlesDeToque(this);
+    tocarMusica(this, 'musica-luta');
   }
 
   // ---------- herói ----------
@@ -144,6 +147,8 @@ class CenaLuta extends Phaser.Scene {
   }
 
   danoNoHeroi() {
+    tocarSom(this, 'dano');
+
     this.heroiVida = Math.max(0, this.heroiVida - DANO_VILAO);
     desenharBarras(this);
 
@@ -161,6 +166,8 @@ class CenaLuta extends Phaser.Scene {
 
   // entra no modo virada uma única vez: soco mais forte e barra piscando
   ativarVirada() {
+    tocarSom(this, 'virada');
+
     this.emVirada = true;
     this.cameras.main.shake(200, 0.006);
 
@@ -194,6 +201,8 @@ class CenaLuta extends Phaser.Scene {
   }
 
   derrotaDoHeroi() {
+    tocarSom(this, 'morte-heroi');
+
     this.fimDeJogo = true;
     this.heroiMorrendo = true;
     this.heroiNoAr = false;
@@ -207,6 +216,8 @@ class CenaLuta extends Phaser.Scene {
   // ---------- vilão ----------
 
   causarDano() {
+    tocarSom(this, 'soco');
+
     // no modo virada, o soco tira mais vida da Morte
     const dano = this.emVirada ? DANO_SOCO_VIRADA : DANO_SOCO;
     this.vilaoVida = Math.max(0, this.vilaoVida - dano);
@@ -221,6 +232,8 @@ class CenaLuta extends Phaser.Scene {
   }
 
   derrotaDoVilao() {
+    tocarSom(this, 'ko');
+
     this.fimDeJogo = true;
     this.vilao.clearTint();
 
@@ -291,6 +304,8 @@ class CenaLuta extends Phaser.Scene {
   }
 
   vilaoEsquivar() {
+    tocarSom(this, 'esquiva');
+
     this.vilaoEsquivando = true;
     this.vilaoInvulneravel = true; // enquanto está debaixo da terra, o soco não pega
     this.vilao.clearTint();
@@ -352,6 +367,7 @@ class CenaLuta extends Phaser.Scene {
     if (pediuPulo && !this.heroiNoAr && !this.heroiAtacando) {
       this.heroiNoAr = true;
       this.velocidadeY = -VELOCIDADE_PULO;
+      tocarSomAleatorio(this, SONS_PULO);
     }
     if (this.heroiNoAr) {
       this.velocidadeY += GRAVIDADE * (delta / 1000);
@@ -390,6 +406,7 @@ class CenaLuta extends Phaser.Scene {
       if (quadroAtual >= 2 && perto) {
         this.socoAcertou = true;
         if (this.vilaoInvulneravel) {
+          tocarSom(this, 'miss');
           flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'MISS');
         } else {
           this.causarDano();

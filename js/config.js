@@ -36,3 +36,21 @@ const SETA_CIMA = [
   "....###....",
   "....###...."
 ];
+
+// sons do jogo: nome usado no código -> arquivo em assets/
+const SONS = {
+  'soco': 'assets/audio/soco1.wav',
+  'esquiva': 'assets/audio/esquiva.wav',
+  'dano': 'assets/audio/dano.wav',
+  'virada': 'assets/audio/virada.wav',
+  'morte-heroi': 'assets/audio/morte-heroi.wav',
+  'ko': 'assets/audio/ko.wav',
+  'miss': 'assets/audio/miss.wav',
+  'pulo1': 'assets/audio/jump1.wav',
+  'pulo2': 'assets/audio/pulo2.wav',
+  'pulo3': 'assets/audio/pulo3.wav',
+  'musica-luta': 'assets/audio/musica-luta.mp3'
+};
+
+// sons de pulo, sorteados a cada pulo
+const SONS_PULO = ['pulo1', 'pulo2', 'pulo3'];
