@@ -25,23 +25,20 @@ function tocarSomAleatorio(cena, nomes, volume = 0.9) {
   tocarSom(cena, escolhido, volume);
 }
 
-// música de fundo: em loop, começa no primeiro toque, clique ou tecla na página
+// música de fundo: guardada no jogo inteiro, em loop, e não reinicia ao trocar de cena
 function tocarMusica(cena, nome, volume = 0.12) {
-  if (!cena.cache.audio.exists(nome)) return;
-  if (!cena.musica) cena.musica = cena.sound.add(nome, { loop: true, volume });
+  const jogo = cena.game;
+  if (!jogo.cache.audio.exists(nome)) return;
+  if (!jogo.musicaFundo) jogo.musicaFundo = jogo.sound.add(nome, { loop: true, volume });
 
-  const eventos = ['keydown', 'pointerdown', 'touchstart'];
-
-  const iniciar = () => {
-    // remove os ouvintes para a música não tentar iniciar várias vezes
-    eventos.forEach((e) => window.removeEventListener(e, iniciar));
-
-    // o navegador pode deixar o contexto de áudio suspenso até o primeiro gesto
-    const ctx = cena.sound.context;
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-
-    if (!cena.musica.isPlaying) cena.musica.play();
+  const tocar = () => {
+    if (!jogo.musicaFundo.isPlaying) jogo.musicaFundo.play();
   };
 
-  eventos.forEach((e) => window.addEventListener(e, iniciar));
+  // se o navegador ainda bloqueia o áudio, espera a liberação
+  if (jogo.sound.locked) {
+    jogo.sound.once(Phaser.Sound.Events.UNLOCKED, tocar);
+  } else {
+    tocar();
+  }
 }

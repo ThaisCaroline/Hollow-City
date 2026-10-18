@@ -105,7 +105,8 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
 
     cena.tweens.add({ targets: botao, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
 
-    botao.on('pointerdown', () => cena.scene.restart());
-    cena.input.keyboard.once('keydown-ENTER', () => cena.scene.restart());
+    // reinicia na mesma luta, e não volta sempre para a primeira
+    botao.on('pointerdown', () => cena.scene.restart({ fase: cena.fase }));
+    cena.input.keyboard.once('keydown-ENTER', () => cena.scene.restart({ fase: cena.fase }));
   });
 }

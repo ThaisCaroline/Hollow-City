@@ -1,9 +1,18 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
 
 class CenaLuta extends Phaser.Scene {
+  constructor() {
+    super('CenaLuta');
+  }
+
+  init(data) {
+    // fase = índice da luta no caminho (0 = primeira)
+    this.fase = (data && data.fase) || 0;
+  }
+
   preload() {
-    carregarSons(this);
+    // os sons são carregados na tela inicial (tela-inicial.js)
 
     this.load.image('cenario', 'assets/cenario-noite.png');
     this.load.spritesheet('vilao-andar', 'assets/vilao-andar.png', {
@@ -29,12 +38,12 @@ class CenaLuta extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(0, 0, 'cenario').setOrigin(0, 0);
+    // o cenário fica fixo na tela; ele só rola durante a caminhada da entrada
+    this.fundo = this.add.tileSprite(0, 0, 512, 224, 'cenario').setOrigin(0, 0);
 
     // garante o estado normal ao reiniciar a luta
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
-    this.cameras.main.centerOn(256, 112);
 
     // prepara as cores do vilão (só na primeira vez, não ao reiniciar a luta)
     if (!this.textures.exists('vilao-preto')) {
@@ -99,7 +108,10 @@ class CenaLuta extends Phaser.Scene {
       });
     }
 
-    this.heroi = this.add.sprite(150, CHAO_Y, 'heroi-andar').setOrigin(0.5, 1).setScale(2);
+    // a primeira luta começa com a entrada do herói, antes da bruxa e da barra de vida
+    const comEntrada = this.fase === 0 && !this.game.introVista;
+
+    this.heroi = this.add.sprite(comEntrada ? 40 : 150, CHAO_Y, 'heroi-andar').setOrigin(0.5, 1).setScale(2);
     this.heroi.setFrame(0);
     this.heroiAtacando = false;
     this.heroiMorrendo = false;
@@ -109,26 +121,99 @@ class CenaLuta extends Phaser.Scene {
 
     this.vilao = this.add.sprite(360, CHAO_Y, 'vilao-preto').setOrigin(0.5, 1).setScale(2);
     this.vilao.setFrame(0);
+    this.vilao.setVisible(!comEntrada);
     this.vilaoAtacando = false;
-    // o relógio do Phaser é o tempo total do jogo, então os prazos contam a partir do início desta luta
-    const inicio = this.time.now;
-    this.vilaoProximoAtaque = inicio + 1500; // primeiro golpe depois de 1,5 s
     this.vilaoEsquivando = false;
     this.vilaoInvulneravel = false;
-    this.vilaoProximaEsquiva = inicio + PRIMEIRA_ESQUIVA;
+    this.vilaoProximoAtaque = 0;
+    this.vilaoProximaEsquiva = 0;
 
     this.heroiVida = VIDA_HEROI;
     this.vilaoVida = VIDA_VILAO;
     this.fimDeJogo = false;
-    this.musicaIniciada = false; // a trilha começa quando a Morte anda pela primeira vez
     this.emVirada = false;   // modo virada: o herói está abaixo de 30% de vida
     this.piscaOn = false;    // alterna a cor da barra do herói no modo virada
-    criarBarrasDeVida(this);
+    this.socoAcertou = false;
+    this.emEntrada = comEntrada; // true enquanto o herói entra e os diálogos acontecem
+    this.emDialogo = false;
 
     this.teclas = this.input.keyboard.createCursorKeys();
     this.teclaSoco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.teclaPulo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     criarControlesDeToque(this);
+
+    if (!comEntrada) this.comecarCombate();
+  }
+
+  // ---------- entrada e diálogos ----------
+
+  // o herói anda pela esquerda até o meio da tela; a cidade rola junto, mais devagar
+  atualizarEntrada(delta) {
+    this.toque.soco = false;
+    this.toque.pulo = false;
+    if (this.emDialogo) return;
+
+    const passo = (velocidade) => (velocidade * delta) / 1000;
+    const esquerda = this.teclas.left.isDown || this.toque.esquerda;
+    const direita = this.teclas.right.isDown || this.toque.direita;
+
+    const xAntes = this.heroi.x;
+    if (direita) this.heroi.x += passo(VELOCIDADE_HEROI);
+    else if (esquerda) this.heroi.x -= passo(VELOCIDADE_HEROI);
+    this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 256);
+
+    this.fundo.tilePositionX += (this.heroi.x - xAntes) * 0.5;
+
+    if (esquerda || direita) {
+      this.heroi.play('heroi-andar', true);
+      this.heroi.setFlipX(esquerda && !direita);
+    } else {
+      this.heroi.stop();
+      this.heroi.setFrame(0);
+    }
+
+    // chegou ao meio da tela: para e começa o diálogo
+    if (this.heroi.x >= 256) this.iniciarDialogoHeroi();
+  }
+
+  iniciarDialogoHeroi() {
+    this.emDialogo = true;
+    this.heroi.stop();
+    this.heroi.setFrame(0);
+
+    mostrarDialogo(this, 'DETECTIVE', 'So you are the one they sent. Who leads these monsters?', () => this.chegaBruxa(), RETRATO_HEROI);
+  }
+
+  // a bruxa entra pela direita e fala antes da luta
+  chegaBruxa() {
+    this.vilao.setVisible(true);
+    this.vilao.x = 500;
+    this.vilao.setFlipX(true);
+    this.vilao.play('vilao-andar', true);
+
+    this.tweens.add({
+      targets: this.vilao,
+      x: 360,
+      duration: 1600,
+      ease: 'Linear',
+      onComplete: () => {
+        this.vilaoParado();
+        mostrarDialogo(this, 'WITCH', 'Turn back, detective. Some questions are better left unanswered.', () => this.comecarCombate(), RETRATO_BRUXA);
+      }
+    });
+  }
+
+  // a luta começa: barra de vida na tela e o fundo para de rolar
+  comecarCombate() {
+    this.emEntrada = false;
+    this.emDialogo = false;
+    this.game.introVista = true;
+
+    this.vilao.setVisible(true);
+    this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
+    this.vilaoProximaEsquiva = this.time.now + PRIMEIRA_ESQUIVA;
+
+    criarBarrasDeVida(this);
   }
 
   // ---------- herói ----------
@@ -201,8 +286,6 @@ class CenaLuta extends Phaser.Scene {
   }
 
   derrotaDoHeroi() {
-    tocarSom(this, 'morte-heroi');
-
     this.fimDeJogo = true;
     this.heroiMorrendo = true;
     this.heroiNoAr = false;
@@ -210,7 +293,12 @@ class CenaLuta extends Phaser.Scene {
     this.heroi.y = CHAO_Y;
     this.heroi.clearTint();
     this.heroi.play('heroi-morte');
-    this.heroi.once('animationcomplete', () => mostrarFim(this, 'GAME OVER', null, '#e03030'));
+
+    // o som de derrota toca junto com o texto GAME OVER
+    this.heroi.once('animationcomplete', () => {
+      tocarSom(this, 'morte-heroi');
+      mostrarFim(this, 'GAME OVER', null, '#e03030');
+    });
   }
 
   // ---------- vilão ----------
@@ -232,8 +320,6 @@ class CenaLuta extends Phaser.Scene {
   }
 
   derrotaDoVilao() {
-    tocarSom(this, 'ko');
-
     this.fimDeJogo = true;
     this.vilao.clearTint();
 
@@ -250,7 +336,21 @@ class CenaLuta extends Phaser.Scene {
       this.anims.globalTimeScale = 1;
       cam.zoomTo(1, 400);
       cam.pan(256, 112, 400);
-      this.time.delayedCall(450, () => mostrarFim(this, 'K.O.!!!!', 'YOU WIN', '#ff8a00'));
+
+      // o sino de K.O. toca junto com o texto, e depois o detetive segue para a próxima luta
+      this.time.delayedCall(450, () => {
+        tocarSom(this, 'ko');
+        this.add.text(256, 90, 'K.O.!!!!', {
+          fontFamily: 'monospace',
+          fontSize: '44px',
+          fontStyle: 'bold',
+          color: '#ff8a00',
+          stroke: '#000000',
+          strokeThickness: 6
+        }).setOrigin(0.5).setDepth(30);
+
+        this.time.delayedCall(2000, () => this.scene.start('Mapa', { fase: this.fase + 1 }));
+      });
     });
   }
 
@@ -352,6 +452,12 @@ class CenaLuta extends Phaser.Scene {
   // ---------- loop principal ----------
 
   update(tempo, delta) {
+    // durante a entrada e os diálogos, a luta fica parada
+    if (this.emEntrada) {
+      this.atualizarEntrada(delta);
+      return;
+    }
+
     if (this.fimDeJogo) return; // luta acabou: as animações de morte cuidam do resto
 
     const passo = (velocidade) => (velocidade * delta) / 1000;
@@ -427,11 +533,6 @@ class CenaLuta extends Phaser.Scene {
       this.vilaoParado();
       this.vilaoAtacar();
     } else if (distancia > DISTANCIA_LUTA) {
-      // a trilha começa na primeira vez que a Morte anda
-      if (!this.musicaIniciada) {
-        this.musicaIniciada = true;
-        tocarMusica(this, 'musica-luta');
-      }
       this.vilao.x += direcao * passo(VELOCIDADE_VILAO);
       this.vilao.play('vilao-andar', true);
     } else {
@@ -457,5 +558,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: CenaLuta
+  scene: [TelaInicial, MapaCaminho, CenaLuta]
 });
