@@ -63,6 +63,14 @@ const FASE2 = {
   // o ogro não esquiva
   esquiva: false,
 
+  // desvio de tiro: o ogro pula quando uma bala vem na direção dele
+  desvioTiro: {
+    alturaPulo: 380,   // impulso do pulo de desvio (alto o bastante para a bala passar por baixo)
+    cooldown: 1500,     // ms até o ogro poder desviar de novo
+    chance: 0.6        // chance de tentar desviar a cada bala que aparece (0 a 1)
+
+  },
+
   // imagem que aparece na caixa de diálogo
   retrato: { chave: 'ogro-parado', frame: 0, escala: 0.4 },
 

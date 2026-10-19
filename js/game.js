@@ -115,6 +115,8 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoProximoAtaque = 0;
     this.vilaoProximaEsquiva = 0;
     this.vilaoNoAr = false;   // true enquanto o vilão pula (pisão do ogro)
+    this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
+    this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
     this.vilaoAltura = 0;
     this.vilaoVelY = 0;
     this.golpeAtual = null;
@@ -278,6 +280,24 @@ class CenaLuta extends Phaser.Scene {
     g.fillRect(-6, -2, 12, 4);
     g.setPosition(x, CHAO_Y - this.cfg.tiro.altura);
     this.tiros.push({ g, dir, vel: this.cfg.tiro.velocidade });
+    this.tentarDesviarTiro();
+  }
+
+  // o ogro pula quando uma bala vem na direção dele; o pulo de desvio não causa dano na queda
+  // o ogro tenta desviar de uma bala que vem na direção dele; cada tentativa (com ou sem sucesso) inicia o cooldown
+  // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
+  tentarDesviarTiro() {
+    const d = this.cfg.desvioTiro;
+    if (!d || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando) return;
+    if (this.time.now < this.vilaoProximoDesvio) return;
+
+    this.vilaoProximoDesvio = this.time.now + d.cooldown;
+    if (Math.random() >= d.chance) return;
+
+    this.vilaoDesviando = true;
+    this.vilaoNoAr = true;
+    this.vilaoAltura = 0;
+    this.vilaoVelY = -d.alturaPulo;
   }
 
   // move as balas; acerta o ogro só se ele estiver no chão (o pulo faz a bala passar por baixo)
@@ -291,7 +311,7 @@ class CenaLuta extends Phaser.Scene {
       t.g.x += t.dir * t.vel * (delta / 1000);
 
       const naMira = Math.abs(t.g.x - this.vilao.x) <= cfg.alcanceCorpo;
-      const noChao = this.vilaoAltura < cfg.altura + 4;
+      const noChao = !this.vilaoNoAr && this.vilaoAltura < cfg.altura + 4;
 
       if (naMira && noChao && !this.vilaoEsquivando && !this.fimDeJogo) {
         t.g.destroy();
@@ -568,6 +588,13 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoAltura = 0;
     this.vilaoVelY = 0;
     this.vilao.y = CHAO_Y;
+
+    // pouso do desvio: só poeira, sem tremor, dano nem avanço
+    if (this.vilaoDesviando) {
+      this.vilaoDesviando = false;
+      this.poeiraNoChao();
+      return;
+    }
 
     this.cameras.main.shake(150, 0.008);
     this.poeiraNoChao();

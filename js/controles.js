@@ -1,18 +1,18 @@
 // Botões de toque no estilo teclado e Free Fire.
-// Cruz de movimento no canto inferior esquerdo (cima = pulo, baixo = agachar só na luta 2), ações no canto inferior direito.
+// Setas de movimento no canto inferior esquerdo; no canto inferior direito, cima e baixo com os ataques.
 // A seta para cima (SETA_CIMA) vem do config.js.
 
 // posições (em pixels da tela de 512 x 224)
 const BOTAO = {
-  // cruz de movimento, igual às setas do teclado
-  cima: { x: 70, y: 152, r: 15 },      // pulo
+  // setas de movimento (lado esquerdo)
   esquerda: { x: 36, y: 190, r: 15 },
-  baixo: { x: 70, y: 190, r: 15 },     // agachar (só na luta 2)
   direita: { x: 104, y: 190, r: 15 },
 
-  // ações
-  principal: { x: 474, y: 188, r: 22 }, // tiro na luta 2, soco na luta 1
-  soco: { x: 424, y: 198, r: 15 }       // soco secundário, só na luta 2
+  // lado direito: setas para cima/baixo e ataques
+  cima: { x: 428, y: 150, r: 15 },   // pulo (todas as fases)
+  baixo: { x: 428, y: 190, r: 15 },  // agachar (só luta 2)
+  tiro: { x: 470, y: 150, r: 15 },   // ataque especial, menor (só luta 2)
+  soco: { x: 480, y: 196, r: 22 }    // ataque padrão, maior
 };
 
 // seta para baixo ('#' = pixel aceso)
@@ -88,34 +88,30 @@ function criarControlesDeToque(cena) {
   cena.input.addPointer(2); // permite tocar em mais de um botão ao mesmo tempo
   cena.toque = { esquerda: false, direita: false, soco: false, pulo: false, agachar: false, tiro: false };
 
-  // cruz de movimento
+  // movimento (lado esquerdo)
   botaoSegurar(cena, BOTAO.esquerda, 0x444444, 'esquerda');
   setaLateral(cena, BOTAO.esquerda.x, BOTAO.esquerda.y, 'esquerda');
 
   botaoSegurar(cena, BOTAO.direita, 0x444444, 'direita');
   setaLateral(cena, BOTAO.direita.x, BOTAO.direita.y, 'direita');
 
-  // cima = pulo (aparece em todas as fases)
+  // lado direito: cima = pulo (todas as fases)
   botaoToque(cena, BOTAO.cima, 0xffffff, 'pulo');
   desenharIcone(cena, SETA_CIMA, BOTAO.cima.x, BOTAO.cima.y, 2);
 
-  // baixo = agachar: só existe na fase 2, então só é desenhado nela
+  // lado direito: baixo = agachar (só luta 2)
   if (cena.cfg.agachar) {
     botaoSegurar(cena, BOTAO.baixo, 0x3a7bd5, 'agachar');
     desenharIcone(cena, SETA_BAIXO, BOTAO.baixo.x, BOTAO.baixo.y, 2);
   }
 
-  // ações
-  if (cena.cfg.tiro) {
-    // luta 2: tiro é o principal (com desenho de arma) e o soco fica ao lado
-    botaoToque(cena, BOTAO.principal, 0xffd23f, 'tiro');
-    desenharArma(cena, BOTAO.principal.x, BOTAO.principal.y);
+  // soco: ataque padrão, sempre o maior
+  botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');
+  cena.add.image(BOTAO.soco.x, BOTAO.soco.y, 'heroi-soco', 3).setScale(1.2).setDepth(11).setAlpha(0.85);
 
-    botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');
-    cena.add.image(BOTAO.soco.x, BOTAO.soco.y, 'heroi-soco', 3).setScale(0.9).setDepth(11).setAlpha(0.85);
-  } else {
-    // luta 1: o principal é o soco
-    botaoToque(cena, BOTAO.principal, 0xff8a00, 'soco');
-    cena.add.image(BOTAO.principal.x, BOTAO.principal.y, 'heroi-soco', 3).setScale(1.2).setDepth(11).setAlpha(0.85);
+  // tiro: ataque especial, menor, só na luta 2
+  if (cena.cfg.tiro) {
+    botaoToque(cena, BOTAO.tiro, 0xffd23f, 'tiro');
+    desenharArma(cena, BOTAO.tiro.x, BOTAO.tiro.y);
   }
 }
