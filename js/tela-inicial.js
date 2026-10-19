@@ -42,14 +42,37 @@ class TelaInicial extends Phaser.Scene {
     // piscando, para chamar o jogador para tocar
     this.tweens.add({ targets: aviso, alpha: 0.2, duration: 600, yoyo: true, repeat: -1 });
 
-    this.add.text(256, 185, 'ARROWS: MOVE   SPACE: JUMP   Z: PUNCH', {
+    this.add.text(256, 176, 'ARROWS: MOVE   SPACE: JUMP   Z: PUNCH', {
       fontFamily: 'monospace',
       fontSize: '8px',
       color: '#cccccc'
     }).setOrigin(0.5);
 
-    this.input.once('pointerdown', () => this.iniciarLuta());
+    // botão de rankings, na parte de baixo da tela
+    const botaoRanking = this.add.text(256, 200, 'RANKINGS', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      fontStyle: 'bold',
+      color: '#ff8a00',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    botaoRanking.on('pointerdown', () => this.abrirRankings());
+
+    // toque na parte de cima começa a luta; a faixa de baixo é dos botões
+    this.input.on('pointerdown', (ponteiro) => {
+      if (ponteiro.y > 165) return;
+      this.iniciarLuta();
+    });
     this.input.keyboard.once('keydown-ENTER', () => this.iniciarLuta());
+  }
+
+  abrirRankings() {
+    if (this.iniciando) return;
+    this.iniciando = true;
+
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Rankings'));
   }
 
   iniciarLuta() {
@@ -61,6 +84,6 @@ class TelaInicial extends Phaser.Scene {
     tocarMusica(this, 'musica-luta');
 
     this.cameras.main.fadeOut(400, 0, 0, 0);
-    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Mapa', { fase: 0 }));
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('TelaNome'));
   }
 }

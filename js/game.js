@@ -1,9 +1,9 @@
 // A cena de luta: herói, vilão e o loop principal.
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
-// Cada fase (fases/fase1.js, fases/fase2.js) traz seus próprios textos, sons, sprites, animações, golpes, morte e golpes do herói.
+// Cada fase (fases/fase1.js, fases/fase2.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
-// ordem das lutas no caminho: a luta 3 volta a ser com a bruxa
-const FASES = [FASE1, FASE2, FASE1];
+// ordem das lutas no caminho: bruxa, ogro, bruxa, ogro
+const FASES = [FASE1, FASE2, FASE1, FASE2];
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -19,7 +19,8 @@ class CenaLuta extends Phaser.Scene {
   preload() {
     // os sons são carregados na tela inicial (tela-inicial.js)
 
-    this.load.image('cenario', this.cfg.cenario);
+    // cada fase tem o próprio cenário, carregado com a chave definida na fase
+    this.load.image(this.cfg.cenarioChave, this.cfg.cenario);
     this.cfg.carregar(this);
 
     this.load.spritesheet('heroi-andar', 'assets/heroi-andar.png', {
@@ -46,7 +47,8 @@ class CenaLuta extends Phaser.Scene {
 
   create() {
     // o cenário fica fixo na tela; ele só rola durante a caminhada da entrada
-    this.fundo = this.add.tileSprite(0, 0, 512, 224, 'cenario').setOrigin(0, 0);
+    this.fundo = this.add.tileSprite(0, 0, 512, 224, this.cfg.cenarioChave).setOrigin(0, 0);
+    this.fundo.y = this.cfg.cenarioAjusteY || 0;   // ajuste de altura do cenário, aplicado em toda tentativa
 
     // garante o estado normal ao reiniciar a luta
     this.anims.globalTimeScale = 1;
@@ -105,6 +107,10 @@ class CenaLuta extends Phaser.Scene {
     this.heroiAltura = 0;
     this.velocidadeY = 0;
     this.heroiAgachado = false;
+    this.proximoSoco = 0;      // quando o herói pode socar de novo (ms)
+    this.proximoTiro = 0;      // quando o herói pode atirar de novo (ms)
+    this.puloPendenteAte = 0;  // até quando um toque no pulo fica guardado (ms)
+    this.pulouNoAviso = false; // true se o herói pulou durante o aviso do golpe atual
 
     this.vilao = this.add.sprite(360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
@@ -114,7 +120,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoInvulneravel = false;
     this.vilaoProximoAtaque = 0;
     this.vilaoProximaEsquiva = 0;
-    this.vilaoNoAr = false;   // true enquanto o vilão pula (pisão do ogro)
+    this.vilaoNoAr = false;        // true enquanto o vilão pula (pisão do ogro)
     this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
     this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
     this.vilaoAltura = 0;
@@ -136,7 +142,7 @@ class CenaLuta extends Phaser.Scene {
     this.tiros = [];
     this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
     this.textoMunicao = this.cfg.tiro
-      ? this.add.text(12, 40, '', { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff' }).setDepth(21)
+      ? this.add.text(12, 38, '', { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 3 }).setDepth(21)
       : null;
     this.atualizarMunicao();
 
@@ -212,6 +218,7 @@ class CenaLuta extends Phaser.Scene {
   comecarCombate() {
     this.emEntrada = false;
     this.emDialogo = false;
+    this.inicioLuta = this.time.now; // começa o cronômetro desta tentativa
 
     // marca a fase como vista, para a entrada não se repetir nas tentativas seguintes
     this.game.fasesVistas = this.game.fasesVistas || {};
@@ -219,15 +226,28 @@ class CenaLuta extends Phaser.Scene {
 
     this.vilao.setVisible(true);
     this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
-    this.vilaoProximaEsquiva = this.time.now + PRIMEIRA_ESQUIVA;
+    this.vilaoProximaEsquiva = this.time.now + this.cfg.primeiraEsquiva;
 
     criarBarrasDeVida(this);
+
+    // cronômetro da luta, no topo da tela
+    this.textoTimer = this.add.text(256, 36, '00:00.00', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 4
+    }).setOrigin(0.5, 0).setDepth(21);
   }
 
   // ---------- herói ----------
 
   socar() {
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
+    if (this.time.now < this.proximoSoco) return;
+    this.proximoSoco = this.time.now + COOLDOWN_SOCO;
+
     this.heroiAtacando = true;
     this.socoAcertou = false;
     this.heroi.play('heroi-soco');
@@ -257,6 +277,8 @@ class CenaLuta extends Phaser.Scene {
     if (!this.cfg.tiro) return;
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
     if (this.municao <= 0) return;
+    if (this.time.now < this.proximoTiro) return;
+    this.proximoTiro = this.time.now + COOLDOWN_TIRO;
 
     this.municao--;
     tocarSom(this, this.cfg.sons.tiro || 'tiro');
@@ -283,8 +305,6 @@ class CenaLuta extends Phaser.Scene {
     this.tentarDesviarTiro();
   }
 
-  // o ogro pula quando uma bala vem na direção dele; o pulo de desvio não causa dano na queda
-  // o ogro tenta desviar de uma bala que vem na direção dele; cada tentativa (com ou sem sucesso) inicia o cooldown
   // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
@@ -341,7 +361,7 @@ class CenaLuta extends Phaser.Scene {
     if (this.textoMunicao) this.textoMunicao.setText(`AMMO ${this.municao}`);
   }
 
-  danoNoHeroi(dano = DANO_VILAO) {
+  danoNoHeroi(dano) {
     tocarSom(this, 'dano');
 
     this.heroiVida = Math.max(0, this.heroiVida - dano);
@@ -429,9 +449,12 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoVida = Math.max(0, this.vilaoVida - dano);
     desenharBarras(this);
 
-    // vilão pisca em vermelho e recua um pouco
-    this.vilao.setTint(0xff6666);
-    this.time.delayedCall(100, () => this.vilao.clearTint());
+    // flash branco ao levar dano; se o vilão estiver no aviso de um golpe, volta para o laranja
+    this.vilao.setTint(0xffffff);
+    this.time.delayedCall(80, () => {
+      if (this.vilaoAtacando) this.vilao.setTint(0xffaa44);
+      else this.vilao.clearTint();
+    });
     this.vilao.x += this.vilao.x > this.heroi.x ? 4 : -4;
 
     if (this.vilaoVida <= 0) this.derrotaDoVilao();
@@ -439,6 +462,11 @@ class CenaLuta extends Phaser.Scene {
 
   derrotaDoVilao() {
     this.fimDeJogo = true;
+
+    // vitória: grava o tempo desta luta no ranking
+    this.tempoLuta = (this.time.now - this.inicioLuta) / 1000;
+    this.registrarTempo();
+
     this.vilao.clearTint();
     this.limparTiros();
 
@@ -466,7 +494,7 @@ class CenaLuta extends Phaser.Scene {
         strokeThickness: 6
       }).setOrigin(0.5).setDepth(30);
 
-      this.time.delayedCall(2000, () => this.scene.start('Mapa', { fase: this.fase + 1 }));
+      this.time.delayedCall(2000, () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta }));
     };
 
     const depoisDaQueda = () => {
@@ -504,14 +532,9 @@ class CenaLuta extends Phaser.Scene {
 
   // ---------- golpes do vilão ----------
 
-  // valores de cada golpe: os da fase valem, e o que faltar vem do padrão (bruxa)
+  // os golpes vêm inteiros da fase (dano, alcance, aviso e de que forma o herói desvia)
   golpe(nome) {
-    const padrao = {
-      clava: { dano: DANO_VILAO, alcance: ALCANCE_VILAO, desviaCom: 'pulo', aviso: 450 },
-      pisao: { dano: 0, raio: 0, desviaCom: 'pulo', aviso: 500 }
-    };
-    const extra = (this.cfg.golpes && this.cfg.golpes[nome]) || {};
-    return { ...padrao[nome], ...extra };
+    return this.cfg.golpes[nome];
   }
 
   // sorteia entre clava e pisão, se a fase tiver pisão e a escolha for aleatória
@@ -526,11 +549,14 @@ class CenaLuta extends Phaser.Scene {
     return (this.cfg.golpes && this.cfg.golpes.intervalo) || 1200;
   }
 
-  // o herói desvia do golpe se estiver no meio certo: pulando ou agachado
-  desviadoPor(meio) {
-    if (meio === 'pulo') return this.heroiAltura >= ALTURA_ESQUIVA;
-    if (meio === 'agachar') return this.heroiAgachado;
-    return false;
+  // o herói desvia do golpe se estiver em algum dos meios listados: pulando ou agachado
+  desviadoPor(meios) {
+    const lista = Array.isArray(meios) ? meios : [meios];
+    return lista.some((meio) => {
+      if (meio === 'pulo') return this.heroiAltura >= ALTURA_ESQUIVA;
+      if (meio === 'agachar') return this.heroiAgachado;
+      return false;
+    });
   }
 
   vilaoAtacar() {
@@ -540,6 +566,7 @@ class CenaLuta extends Phaser.Scene {
     this.golpeAtualNome = nome;
 
     this.vilaoAtacando = true;
+    this.pulouNoAviso = false;   // começa a contar os pulos deste aviso
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
     // a animação de ataque (a clava do ogro, por exemplo) toca durante o aviso
@@ -559,14 +586,14 @@ class CenaLuta extends Phaser.Scene {
 
   // golpe corpo a corpo: avanço rápido, arco de corte e dano se o herói estiver no alcance
   vilaoGolpeClava(g, dir) {
-    this.tweens.add({ targets: this.vilao, x: this.vilao.x + dir * 24, duration: 80, yoyo: true });
+    if (g.avanco) this.tweens.add({ targets: this.vilao, x: this.vilao.x + dir * g.avanco.distancia, duration: g.avanco.duracao, yoyo: true });
     this.desenharCorte(dir);
 
     const heroiNaFrente = (this.heroi.x - this.vilao.x) * dir > 0;
     const alcancou = Math.abs(this.vilao.x - this.heroi.x) <= g.alcance;
 
     if (alcancou && heroiNaFrente) {
-      if (this.desviadoPor(g.desviaCom)) this.mostrarEsquiva();
+      if (this.desviouClava(g)) this.mostrarEsquiva();
       else this.danoNoHeroi(g.dano);
     } else if (alcancou && !heroiNaFrente) {
       this.mostrarEsquiva(); // herói passou para trás dele: o golpe pegou só o ar
@@ -596,7 +623,8 @@ class CenaLuta extends Phaser.Scene {
       return;
     }
 
-    this.cameras.main.shake(150, 0.008);
+    const tremor = this.cfg.golpes.pisao.tremor;
+    this.cameras.main.shake(tremor.duracao, tremor.forca);
     this.poeiraNoChao();
 
     const g = this.golpeAtual;
@@ -618,7 +646,7 @@ class CenaLuta extends Phaser.Scene {
   // a poeira que aparece quando o vilão bate no chão
   poeiraNoChao() {
     const p = this.add.graphics().setDepth(14);
-    p.fillStyle(0x3a3a3a, 0.7);
+    p.fillStyle(this.cfg.golpes.pisao.corPoeira, 0.7);
     p.fillEllipse(this.vilao.x, CHAO_Y - 2, 70, 10);
     this.tweens.add({ targets: p, alpha: 0, duration: 400, onComplete: () => p.destroy() });
   }
@@ -676,11 +704,18 @@ class CenaLuta extends Phaser.Scene {
         this.vilao.once('animationcomplete', () => {
           if (this.fimDeJogo) return;
           this.vilaoEsquivando = false;
-          this.vilaoProximaEsquiva = this.time.now + COOLDOWN_ESQUIVA;
+          this.vilaoProximaEsquiva = this.time.now + this.cfg.cooldownEsquiva;
           this.vilaoProximoAtaque = this.time.now + 400; // contra-ataque rápido
         });
       });
     });
+  }
+
+  // a clava conta como desviada se o herói estiver no ar agora ou se pulou durante o aviso
+  desviouClava(g) {
+    const meios = Array.isArray(g.desviaCom) ? g.desviaCom : [g.desviaCom];
+    const pulou = meios.includes('pulo') && this.pulouNoAviso;
+    return pulou || this.desviadoPor(g.desviaCom);
   }
 
   mostrarEsquiva() {
@@ -697,6 +732,17 @@ class CenaLuta extends Phaser.Scene {
     this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
   }
 
+  // grava o tempo da luta vencida no ranking da fase, com a data da vitória e o identificador da run
+  registrarTempo() {
+    db.collection('ranking').add({
+      nome: this.game.nomeJogador || 'ANON',
+      fase: this.fase + 1,                          // luta 1, 2, 3 ou 4
+      tempo: Number(this.tempoLuta.toFixed(2)),     // em segundos
+      data: new Date(),                             // data e hora da vitória
+      runId: this.game.runId || null                // liga este tempo à run completa
+    }).catch((erro) => console.error('Erro ao salvar ranking:', erro));
+  }
+
   // ---------- loop principal ----------
 
   update(tempo, delta) {
@@ -707,6 +753,9 @@ class CenaLuta extends Phaser.Scene {
     }
 
     if (this.fimDeJogo) return; // luta acabou: as animações de morte cuidam do resto
+
+    // cronômetro da luta: para quando a luta acaba, junto com o tempo gravado no ranking
+    this.textoTimer.setText(formatarCronometro(this.time.now - this.inicioLuta));
 
     const passo = (velocidade) => (velocidade * delta) / 1000;
 
@@ -731,8 +780,13 @@ class CenaLuta extends Phaser.Scene {
       || Phaser.Input.Keyboard.JustDown(this.teclas.up)
       || this.toque.pulo;
     this.toque.pulo = false;
-    if (pediuPulo && !this.heroiNoAr && !this.heroiAtacando && !this.heroiAgachado) {
+
+    // o toque fica guardado por um curto tempo, para o pulo acontecer assim que o herói puder pular
+    if (pediuPulo) this.puloPendenteAte = this.time.now + JANELA_PULO;
+    if (this.time.now < this.puloPendenteAte && !this.heroiNoAr && !this.heroiAtacando && !this.heroiAgachado) {
+      this.puloPendenteAte = 0;
       this.heroiNoAr = true;
+      this.pulouNoAviso = true;   // conta para o desvio da clava, se o aviso estiver rolando
       this.velocidadeY = -VELOCIDADE_PULO;
       tocarSomAleatorio(this, SONS_PULO, 1.0);
     }
@@ -796,7 +850,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilao.y = CHAO_Y - this.vilaoAltura;
 
     // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
-    // A velocidade vem da fase: a bruxa usa a padrão, o ogro anda mais devagar
+    // A velocidade, as distâncias e os golpes vêm da fase de cada vilão
     const distancia = Math.abs(this.vilao.x - this.heroi.x);
     const direcao = this.heroi.x < this.vilao.x ? -1 : 1;
 
@@ -804,11 +858,11 @@ class CenaLuta extends Phaser.Scene {
       // a animação de afundar e surgir cuida de tudo
     } else if (this.vilaoAtacando) {
       // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
-    } else if (!this.heroiNoAr && distancia <= DISTANCIA_ATAQUE && this.time.now >= this.vilaoProximoAtaque) {
+    } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
       this.vilaoParado();
       this.vilaoAtacar();
-    } else if (distancia > DISTANCIA_LUTA) {
-      this.vilao.x += direcao * passo(this.cfg.velocidade || VELOCIDADE_VILAO);
+    } else if (distancia > this.cfg.distanciaLuta) {
+      this.vilao.x += direcao * passo(this.cfg.velocidade);
       this.vilao.play(this.cfg.anims.andar, true);
     } else {
       this.vilaoParado();
@@ -829,9 +883,10 @@ new Phaser.Game({
   width: 512,
   height: 224,
   pixelArt: true,
+  dom: { createContainer: true },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [TelaInicial, MapaCaminho, CenaLuta]
+  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings]
 });

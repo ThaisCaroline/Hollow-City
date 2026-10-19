@@ -1,20 +1,23 @@
-// Fase 2: o ogro. Tudo que é dele fica aqui: textos, cenário, sons, sprites, animações, golpes e morte.
-// Vida e dano ficam aqui; sons e constantes gerais ficam em config.js.
+// Fase 2: o ogro. Tudo que é dele fica aqui: textos, cenário, sons, sprites, animações, golpes, vida, movimento e morte.
 
 const FASE2 = {
   nome: 'OGRE',
+  rotuloVilao: 'OGRE',       // nome que aparece na barra de vida do vilão
   dialogoHeroi: "I'll clean my city of all of you!",
   dialogoVilao: 'Me smash you! Me big!',
   dialogoDerrota: 'Me die... but boss will get you!',
 
-  cenario: 'assets/cenario-noite.png',
-
+  cenario: 'assets/ogro-cenario-v2.png',
+  cenarioChave: 'cenario-ogro',
+  cenarioAjusteY: -6,        // sobe o fundo para a faixa de chão encostar nos pés dos lutadores
   // vida, tamanho e movimento do vilão
-  vida: 400,
+  vida: 500,
   barraLargura: 320,          // barra bem larga, para o ogro parecer um chefe
   escala: 1.5,                // ponto de partida; ajuste depois do teste
   espelhado: true,            // o sprite do ogro nasce virado para a esquerda
-  velocidade: 35,             // pixels por segundo; mais lenta que a bruxa (50)
+  velocidade: 30,             // pixels por segundo; mais lenta que a bruxa (50)
+  distanciaLuta: 60,          // para de andar a essa distância do herói
+  distanciaAtaque: 70,        // começa um golpe a essa distância (ou menos)
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
@@ -24,19 +27,23 @@ const FASE2 = {
 
   // golpes do ogro
   golpes: {
-    intervalo: 2000,          // um ataque a cada 2 segundos
+    intervalo: 1700,          // um ataque a cada 1,7 segundo
     // clava: golpe alto, desviado agachando
     clava: {
       dano: 40,
-      alcance: 75,
-      desviaCom: 'agachar',
-      aviso: 600              // aviso laranja de 0,6 s
+      alcance: 80,
+      desviaCom: ['agachar', 'pulo'],   // a clava pode ser desviada agachando ou pulando
+      aviso: 600,             // aviso laranja de 0,6 s
+      avanco: { distancia: 24, duracao: 80 }  // avanço rápido do golpe
     },
     // pisão: o ogro pula e cai no chão; quem estiver no chão perto leva dano
     pisao: {
-      dano: 30,
+      dano: 25,
       raio: 80,               // pixels de cada lado do ogro
-      aviso: 500              // aviso laranja de 0,5 s
+      aviso: 500,             // aviso laranja de 0,5 s
+      desviaCom: 'pulo',
+      tremor: { duracao: 150, forca: 0.008 }, // tremor quando ele pousa
+      corPoeira: 0x3a3a3a     // cor da poeira do pouso
     },
     escolha: 'aleatorio',     // clava ou pisão, sorteado a cada ataque
     avancoDepoisPulo: 30,     // anda um pouco em direção ao herói depois de pousar
@@ -63,12 +70,11 @@ const FASE2 = {
   // o ogro não esquiva
   esquiva: false,
 
-  // desvio de tiro: o ogro pula quando uma bala vem na direção dele
+  // desvio de tiro: o ogro tenta pular quando uma bala aparece
   desvioTiro: {
     alturaPulo: 380,   // impulso do pulo de desvio (alto o bastante para a bala passar por baixo)
-    cooldown: 1500,     // ms até o ogro poder desviar de novo
+    cooldown: 1500,    // ms até o ogro poder tentar desviar de novo
     chance: 0.6        // chance de tentar desviar a cada bala que aparece (0 a 1)
-
   },
 
   // imagem que aparece na caixa de diálogo

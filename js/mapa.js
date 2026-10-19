@@ -5,7 +5,7 @@ const POSICOES_MAPA = [
   { x: 250, y: 320 },   // luta 1: praça do canto esquerdo
   { x: 575, y: 330 },   // luta 2: praça da igreja
   { x: 915, y: 330 },   // luta 3: praça do centro-direito
-  { x: 1420, y: 190}   // castelo: centro do castelo
+  { x: 1224, y: 386 }   // luta 4: praça à direita do rio
 ];
 
 // desenha um pino de mapa: contorno preto, corpo colorido e furo branco no meio.
@@ -67,7 +67,7 @@ class MapaCaminho extends Phaser.Scene {
 
     // pinos das lutas, o último é o castelo
     POSICOES_MAPA.forEach((pos, i) => {
-      const eCastelo = i === POSICOES_MAPA.length - 1;
+      const eCastelo = false;
       const feito = i < this.fase;
       const atual = i === this.fase;
 

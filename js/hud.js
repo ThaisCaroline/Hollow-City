@@ -7,7 +7,7 @@ function criarBarrasDeVida(cena) {
   const estilo = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff' };
   const larguraVilao = cena.cfg.barraLargura || 180;
   cena.add.text(12, 22, 'HERO', estilo).setDepth(21);
-  cena.add.text(512 - 12 - larguraVilao, 22, cena.cfg.nome === 'OGRE' ? 'OGRE' : 'VILLAIN', estilo).setDepth(21);
+  cena.add.text(512 - 12 - larguraVilao, 22, cena.cfg.rotuloVilao, estilo).setDepth(21);
 
   desenharBarras(cena);
 }
@@ -111,4 +111,11 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
     botao.on('pointerdown', () => cena.scene.restart({ fase: cena.fase }));
     cena.input.keyboard.once('keydown-ENTER', () => cena.scene.restart({ fase: cena.fase }));
   });
+}
+// cronômetro da luta no formato 00:00.00 (minutos, segundos e centésimos)
+function formatarCronometro(ms) {
+  const total = ms / 1000;
+  const min = Math.floor(total / 60);
+  const seg = (total - min * 60).toFixed(2).padStart(5, '0');
+  return `${String(min).padStart(2, '0')}:${seg}`;
 }

@@ -1,17 +1,15 @@
 // Todas as constantes do jogo. Mude os valores aqui.
+// As constantes do vilão (vida, dano, velocidade, distâncias, esquiva) ficam em cada fase (fases/fase1.js, fases/fase2.js).
 
 const VELOCIDADE_HEROI = 45;   // pixels por segundo
-const VELOCIDADE_VILAO = 50;
-const DISTANCIA_LUTA = 60;     // o vilão para de andar a essa distância do herói
-const DISTANCIA_ATAQUE = 70;   // o vilão começa um golpe a essa distância (ou menos)
 const ALCANCE_SOCO = 75;       // distância máxima para o soco do herói acertar
-const ALCANCE_VILAO = 75;      // distância máxima para o golpe do vilão acertar
 
 const DANO_SOCO = 10;
 const DANO_SOCO_VIRADA = 15;   // dano do soco com o herói no modo virada
-const DANO_VILAO = 25;
-const VIDA_HEROI = 140;
-const VIDA_VILAO = 250;        // vida da Morte (250 = 25 socos)
+const VIDA_HEROI = 150;
+const COOLDOWN_SOCO = 400;     // ms entre um soco e outro do herói
+const COOLDOWN_TIRO = 600;     // ms entre um tiro e outro do herói
+const JANELA_PULO = 350;       // ms em que um toque no pulo fica guardado, esperando o herói poder pular
 const LIMITE_VIRADA = VIDA_HEROI * 0.3; // abaixo disso, o herói entra no modo virada
 
 const CHAO_Y = 205;            // posição dos pés dos lutadores no chão
@@ -20,9 +18,6 @@ const GRAVIDADE = 1400;
 const VELOCIDADE_NO_AR = 150;  // velocidade horizontal durante o pulo
 const ALTURA_ESQUIVA = 20;     // acima disso, o herói está no ar e o golpe passa por baixo
 const POSE_PULO = 3;           // quadro do andar usado como pose no ar
-
-const COOLDOWN_ESQUIVA = 2000;  // tempo (ms) até a Morte poder esquivar de novo
-const PRIMEIRA_ESQUIVA = 3000;  // a primeira esquiva só fica disponível depois disso
 
 // ícone do botão de pulo: seta para cima ('#' = pixel aceso)
 const SETA_CIMA = [
@@ -57,9 +52,18 @@ const SONS = {
 // sons de pulo, sorteados a cada pulo
 const SONS_PULO = ['pulo1', 'pulo2', 'pulo3'];
 
-// lutas do caminho até o castelo, em ordem (todas iguais por enquanto)
+// lutas do caminho até o castelo, em ordem
 const LUTAS = [
   { nome: 'WITCH' },
+  { nome: 'OGRE' },
   { nome: 'WITCH' },
-  { nome: 'WITCH' }
+  { nome: 'OGRE' }
 ];
+
+// transforma segundos no texto que aparece na tela: "12.28 seconds" ou "1 minute 05.40 seconds"
+function formatarTempo(segundos) {
+  if (segundos < 60) return `${segundos.toFixed(2)} seconds`;
+  const min = Math.floor(segundos / 60);
+  const resto = (segundos - min * 60).toFixed(2).padStart(5, '0');
+  return `${min} ${min === 1 ? 'minute' : 'minutes'} ${resto} seconds`;
+}

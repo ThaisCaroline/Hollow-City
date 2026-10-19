@@ -1,17 +1,32 @@
-// Fase 1: a bruxa. Tudo que é dela fica aqui: textos, cenário, sons, sprites, animações e golpes.
-// Vida e dano ficam em config.js (VIDA_VILAO, DANO_VILAO).
+// Fase 1: a bruxa. Tudo que é dela fica aqui: textos, cenário, sons, sprites, animações, golpes, vida e movimento.
 
 const FASE1 = {
   nome: 'WITCH',
+  rotuloVilao: 'VILLAIN',    // nome que aparece na barra de vida do vilão
   dialogoHeroi: 'So you are the one they sent. Who leads these monsters?',
   dialogoVilao: 'Turn back, detective. Some questions are better left unanswered.',
 
   cenario: 'assets/cenario-noite.png',
+  cenarioChave: 'cenario',
 
-  // vida e tamanho do vilão
-  vida: VIDA_VILAO,
+  // vida, tamanho e movimento do vilão
+  vida: 300,
   escala: 2,
   espelhado: false,          // o sprite da bruxa nasce virado para a direita
+  velocidade: 50,            // pixels por segundo
+  distanciaLuta: 60,         // para de andar a essa distância do herói
+  distanciaAtaque: 70,       // começa um golpe a essa distância (ou menos)
+
+  // golpes da bruxa
+  golpes: {
+    intervalo: 1000,         // um ataque a cada 1 segundo
+    clava: {
+      dano: 25,
+      alcance: 75,
+      desviaCom: 'pulo',
+      aviso: 450             // aviso laranja de 0,45 s
+    }
+  },
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
@@ -20,6 +35,8 @@ const FASE1 = {
 
   // a bruxa esquiva afundando no chão
   esquiva: true,
+  cooldownEsquiva: 2000,     // tempo (ms) até a bruxa poder esquivar de novo
+  primeiraEsquiva: 3000,     // a primeira esquiva só fica disponível depois disso
 
   // imagem que aparece na caixa de diálogo
   retrato: { chave: 'vilao-preto', frame: 0, escala: 1.2 },
