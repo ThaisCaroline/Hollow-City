@@ -10,14 +10,17 @@ const FASE2 = {
   cenario: 'assets/ogro-cenario-v2.png',
   cenarioChave: 'cenario-ogro',
   cenarioAjusteY: -6,        // sobe o fundo para a faixa de chão encostar nos pés dos lutadores
+
   // vida, tamanho e movimento do vilão
   vida: 500,
   barraLargura: 320,          // barra bem larga, para o ogro parecer um chefe
   escala: 1.5,                // ponto de partida; ajuste depois do teste
   espelhado: true,            // o sprite do ogro nasce virado para a esquerda
-  velocidade: 30,             // pixels por segundo; mais lenta que a bruxa (50)
+  velocidade: 35,             // pixels por segundo; mais lenta que a bruxa (50)
   distanciaLuta: 60,          // para de andar a essa distância do herói
   distanciaAtaque: 70,        // começa um golpe a essa distância (ou menos)
+  margemCorpo: 50,            // o ogro é grande: o herói fica mais longe do centro dele
+  alturaPassagem: 50,         // acima dessa altura no ar, o herói pode pular por cima do ogro
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
@@ -28,7 +31,7 @@ const FASE2 = {
   // golpes do ogro
   golpes: {
     intervalo: 1600,          // um ataque a cada 1,6 segundo
-    // clava: golpe alto, desviado agachando
+    // clava: golpe alto, desviado agachando ou pulando durante o aviso
     clava: {
       dano: 40,
       alcance: 80,
@@ -63,7 +66,8 @@ const FASE2 = {
     municao: 6,               // zerado a cada tentativa (o create da cena volta a 6)
     dano: 50,
     velocidade: 300,          // pixels por segundo
-    altura: 8,                // altura da bala: o pulo do ogro (20 px) passa por cima dela
+    altura: 8,                // altura da bala para o acerto: o pulo do ogro (20 px) passa por cima dela
+    alturaDisparo: 32,        // altura visual da bala: sai na altura do braço do herói (o chão é 205)
     alcanceCorpo: 50          // distância do centro do ogro para a bala acertar
   },
 

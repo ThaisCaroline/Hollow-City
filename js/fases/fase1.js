@@ -16,6 +16,8 @@ const FASE1 = {
   velocidade: 50,            // pixels por segundo
   distanciaLuta: 60,         // para de andar a essa distância do herói
   distanciaAtaque: 70,       // começa um golpe a essa distância (ou menos)
+  margemCorpo: 30,           // distância mínima entre os centros do herói e da bruxa
+  alturaPassagem: 40,        // acima dessa altura no ar, o herói pode pular por cima da bruxa
 
   // golpes da bruxa
   golpes: {

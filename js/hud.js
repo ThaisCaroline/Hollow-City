@@ -63,10 +63,10 @@ function flutuarTexto(cena, x, y, conteudo) {
   });
 }
 
-// tela de fim: título, subtítulo e botão de jogar de novo
+// tela de fim: título, subtítulo e botões para jogar de novo ou voltar ao mapa
 function mostrarFim(cena, titulo, subtitulo, cor) {
   // o título "cai" na tela, grande, e treme a câmera ao bater
-  const texto = cena.add.text(256, 80, titulo, {
+  const texto = cena.add.text(256, 70, titulo, {
     fontFamily: 'monospace',
     fontSize: '44px',
     fontStyle: 'bold',
@@ -85,7 +85,7 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
   });
 
   if (subtitulo) {
-    const sub = cena.add.text(256, 112, subtitulo, {
+    const sub = cena.add.text(256, 102, subtitulo, {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#ffffff',
@@ -95,23 +95,38 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
     cena.tweens.add({ targets: sub, alpha: 1, delay: 500, duration: 400 });
   }
 
-  // botão de jogar de novo aparece depois, piscando
+  // botões aparecem depois, um abaixo do outro
   cena.time.delayedCall(900, () => {
-    const botao = cena.add.text(256, 145, 'PLAY AGAIN', {
+    const botaoJogar = cena.add.text(256, 135, 'PLAY AGAIN', {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#ffffff',
       backgroundColor: '#000000',
       padding: { x: 8, y: 4 }
-    }).setOrigin(0.5).setDepth(30).setInteractive();
+    }).setOrigin(0.5).setDepth(30).setInteractive({ useHandCursor: true });
 
-    cena.tweens.add({ targets: botao, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
+    const botaoMapa = cena.add.text(256, 165, 'BACK TO MAP', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(0.5).setDepth(30).setInteractive({ useHandCursor: true });
 
-    // reinicia na mesma luta, e não volta sempre para a primeira
-    botao.on('pointerdown', () => cena.scene.restart({ fase: cena.fase }));
-    cena.input.keyboard.once('keydown-ENTER', () => cena.scene.restart({ fase: cena.fase }));
+    cena.tweens.add({ targets: botaoJogar, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
+
+    // jogar de novo: reinicia na mesma luta
+    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase });
+    botaoJogar.on('pointerdown', jogarDeNovo);
+    cena.input.keyboard.once('keydown-ENTER', jogarDeNovo);
+
+    // voltar ao mapa: a luta atual continua como próxima no caminho
+    const voltarMapa = () => cena.scene.start('Mapa', { fase: cena.fase });
+    botaoMapa.on('pointerdown', voltarMapa);
+    cena.input.keyboard.once('keydown-ESC', voltarMapa);
   });
 }
+
 // cronômetro da luta no formato 00:00.00 (minutos, segundos e centésimos)
 function formatarCronometro(ms) {
   const total = ms / 1000;

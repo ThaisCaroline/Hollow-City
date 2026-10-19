@@ -9,6 +9,7 @@ class RankingFase extends Phaser.Scene {
     this.fase = data.fase;     // índice da luta vencida (0 = primeira)
     this.tempo = data.tempo;   // tempo da luta em segundos
     this.saindo = false;
+    this.game.progresso = Math.max(this.game.progresso || 0, this.fase + 1);
   }
 
   create() {
@@ -97,7 +98,11 @@ class RankingFase extends Phaser.Scene {
     if (this.saindo) return;
     this.saindo = true;
 
+    const proximaLuta = this.fase + 1;
     this.cameras.main.fadeOut(400, 0, 0, 0);
-    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Mapa', { fase: this.fase + 1 }));
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      if (proximaLuta >= LUTAS.length) this.scene.start('Final');
+      else this.scene.start('Mapa', { fase: this.game.progresso });
+    });
   }
 }

@@ -1,4 +1,5 @@
 // Mapa do caminho até o castelo: mostra a cidade inteira, com os pinos desenhados por código.
+// Lutas já vencidas podem ser repetidas, a atual pisca e as seguintes ficam bloqueadas.
 
 // posições dos pinos sobre a imagem (em pixels do mapa de 1568 x 672)
 const POSICOES_MAPA = [
@@ -38,7 +39,7 @@ class MapaCaminho extends Phaser.Scene {
   }
 
   init(data) {
-    // a fase é o índice da próxima luta (0 = primeira)
+    // a fase é o índice da próxima luta a jogar (0 = primeira)
     this.fase = (data && data.fase) || 0;
     this.iniciando = false;
   }
@@ -65,39 +66,80 @@ class MapaCaminho extends Phaser.Scene {
     this.add.rectangle(0, 0, larguraMapa, alturaMapa, 0x000000, 0.25)
       .setOrigin(0, 0);
 
-    // pinos das lutas, o último é o castelo
-    POSICOES_MAPA.forEach((pos, i) => {
-      const eCastelo = false;
-      const feito = i < this.fase;
-      const atual = i === this.fase;
+    // progresso: quantas lutas já estão liberadas (a próxima a jogar é o índice "progresso")
+    const progresso = Math.max(this.fase, this.game.progresso || 0);
+    this.progressoAtual = progresso;
 
-      // cor: cinza para as vencidas, laranja para a atual, vermelho-escuro para as próximas
-      const cor = feito ? 0x666666 : atual ? 0xff8a00 : 0x5a2a2a;
+    POSICOES_MAPA.forEach((pos, i) => {
+      const feito = i < progresso;                       // já vencida: pode repetir
+      const atual = i === progresso && progresso < LUTAS.length; // próxima a jogar
+      const bloqueado = i > progresso;                   // ainda não liberada
+      const jogavel = feito || atual;
+
+      // cor: cinza para as vencidas, laranja para a atual, escuro para as bloqueadas
+      const cor = feito ? 0x666666 : atual ? 0xff8a00 : 0x333333;
 
       // o pino é corrigido pelo zoom, para aparecer com tamanho legível na tela
-      const escala = (eCastelo ? 1.6 : 1.2) / zoom;
+      const escala = 1.2 / zoom;
       const pino = desenharPino(this, pos.x, pos.y, cor, escala);
 
-      if (atual && !eCastelo) {
+      // legenda em inglês, embaixo do pino
+      const legenda = feito ? 'CLICK TO REPLAY' : atual ? 'CLICK TO ENTER' : 'LOCKED';
+      const texto = this.add.text(pos.x, pos.y + 4 / zoom, legenda, {
+        fontFamily: 'monospace',
+        fontSize: `${Math.round(9 / zoom)}px`,
+        fontStyle: 'bold',
+        color: bloqueado ? '#777777' : '#ffffff',
+        stroke: '#000000',
+        strokeThickness: Math.max(2, Math.round(2 / zoom))
+      }).setOrigin(0.5, 0).setDepth(11);
+
+      if (jogavel) {
         // área de toque sobre o pino, em coordenadas do mapa
         const zona = this.add.zone(pos.x, pos.y - 12 / zoom, 28 / zoom, 32 / zoom)
           .setInteractive({ useHandCursor: true });
-        zona.on('pointerdown', () => this.iniciarLuta());
+        zona.on('pointerdown', () => this.iniciarLuta(i));
 
-        // o pino sobe e desce para chamar atenção
-        this.tweens.add({ targets: [pino, zona], y: '-=10', duration: 400, yoyo: true, repeat: -1 });
+        // a luta atual sobe e desce para chamar atenção
+        if (atual) {
+          this.tweens.add({ targets: [pino, zona, texto], y: '-=10', duration: 400, yoyo: true, repeat: -1 });
+        }
       }
     });
 
-    this.input.keyboard.once('keydown-ENTER', () => this.iniciarLuta());
+    // ENTER inicia a próxima luta liberada
+    this.input.keyboard.once('keydown-ENTER', () => {
+      if (progresso < LUTAS.length) this.iniciarLuta(progresso);
+    });
+
+    // botão para voltar à tela inicial; escalado pelo inverso do zoom para ficar legível
+    const botaoVoltar = this.add.text(larguraMapa / 2, alturaMapa - 30, 'BACK', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 3 }
+    }).setOrigin(0.5).setScale(1 / zoom).setDepth(30).setInteractive({ useHandCursor: true });
+    botaoVoltar.on('pointerdown', () => this.voltarInicio());
+
+    this.input.keyboard.once('keydown-ESC', () => this.voltarInicio());
   }
 
-  iniciarLuta() {
-    // o castelo ainda não está pronto, então não inicia nada
-    if (this.fase >= LUTAS.length) return;
+  iniciarLuta(fase) {
+    // o castelo ainda não está pronto, então não inicia nada além das lutas do caminho
+    if (fase >= LUTAS.length) return;
     if (this.iniciando) return;
     this.iniciando = true;
 
-    this.scene.start('CenaLuta', { fase: this.fase });
+    this.scene.start('CenaLuta', { fase: fase });
+  }
+
+  voltarInicio() {
+    if (this.iniciando) return;
+    this.iniciando = true;
+
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('TelaInicial'));
   }
 }

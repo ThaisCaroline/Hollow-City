@@ -107,10 +107,12 @@ class CenaLuta extends Phaser.Scene {
     this.heroiAltura = 0;
     this.velocidadeY = 0;
     this.heroiAgachado = false;
-    this.proximoSoco = 0;      // quando o herói pode socar de novo (ms)
-    this.proximoTiro = 0;      // quando o herói pode atirar de novo (ms)
-    this.puloPendenteAte = 0;  // até quando um toque no pulo fica guardado (ms)
-    this.pulouNoAviso = false; // true se o herói pulou durante o aviso do golpe atual
+    this.heroiBloqueado = false; // true quando a regra de corpo impediu o herói de andar neste quadro
+    this.ladoHeroi = -1;         // de que lado do vilão o herói está (-1 = à esquerda, 1 = à direita)
+    this.proximoSoco = 0;        // quando o herói pode socar de novo (ms)
+    this.proximoTiro = 0;        // quando o herói pode atirar de novo (ms)
+    this.puloPendenteAte = 0;    // até quando um toque no pulo fica guardado (ms)
+    this.pulouNoAviso = false;   // true se o herói pulou durante o aviso do golpe atual
 
     this.vilao = this.add.sprite(360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
@@ -137,6 +139,7 @@ class CenaLuta extends Phaser.Scene {
     this.socoAcertou = false;
     this.emEntrada = comEntrada; // true enquanto o herói entra e os diálogos acontecem
     this.emDialogo = false;
+    this.emCombate = false;      // só fica true quando o vilão passa a agir e a receber dano
 
     // tiro: munição volta ao máximo a cada tentativa, e as balas ficam nesta lista
     this.tiros = [];
@@ -159,9 +162,6 @@ class CenaLuta extends Phaser.Scene {
 
   // o herói anda pela esquerda até o meio da tela; a cidade rola junto, mais devagar
   atualizarEntrada(delta) {
-    this.toque.soco = false;
-    this.toque.pulo = false;
-    this.toque.tiro = false;
     if (this.emDialogo) return;
 
     const passo = (velocidade) => (velocidade * delta) / 1000;
@@ -169,19 +169,23 @@ class CenaLuta extends Phaser.Scene {
     const direita = this.teclas.right.isDown || this.toque.direita;
 
     const xAntes = this.heroi.x;
-    if (direita) this.heroi.x += passo(VELOCIDADE_HEROI);
-    else if (esquerda) this.heroi.x -= passo(VELOCIDADE_HEROI);
-    this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 256);
+    if (!this.heroiAtacando && !this.heroiAgachado) {
+      if (direita) this.heroi.x += passo(VELOCIDADE_HEROI);
+      else if (esquerda) this.heroi.x -= passo(VELOCIDADE_HEROI);
+      this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 256);
+
+      if (!this.heroiNoAr) {
+        if (esquerda || direita) {
+          this.heroi.play('heroi-andar', true);
+          this.heroi.setFlipX(esquerda && !direita);
+        } else {
+          this.heroi.stop();
+          this.heroi.setFrame(0);
+        }
+      }
+    }
 
     this.fundo.tilePositionX += (this.heroi.x - xAntes) * 0.5;
-
-    if (esquerda || direita) {
-      this.heroi.play('heroi-andar', true);
-      this.heroi.setFlipX(esquerda && !direita);
-    } else {
-      this.heroi.stop();
-      this.heroi.setFrame(0);
-    }
 
     // chegou ao meio da tela: para e começa o diálogo
     if (this.heroi.x >= 256) this.iniciarDialogoHeroi();
@@ -218,7 +222,12 @@ class CenaLuta extends Phaser.Scene {
   comecarCombate() {
     this.emEntrada = false;
     this.emDialogo = false;
+    this.emCombate = true;           // a partir daqui o vilão age e recebe dano
     this.inicioLuta = this.time.now; // começa o cronômetro desta tentativa
+
+    // munição cheia no começo do combate (os tiros de teste da entrada não contam)
+    this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
+    this.atualizarMunicao();
 
     // marca a fase como vista, para a entrada não se repetir nas tentativas seguintes
     this.game.fasesVistas = this.game.fasesVistas || {};
@@ -300,7 +309,7 @@ class CenaLuta extends Phaser.Scene {
     const g = this.add.graphics().setDepth(12);
     g.fillStyle(0xffd23f, 1);
     g.fillRect(-6, -2, 12, 4);
-    g.setPosition(x, CHAO_Y - this.cfg.tiro.altura);
+    g.setPosition(x, CHAO_Y - this.cfg.tiro.alturaDisparo);
     this.tiros.push({ g, dir, vel: this.cfg.tiro.velocidade });
     this.tentarDesviarTiro();
   }
@@ -308,7 +317,7 @@ class CenaLuta extends Phaser.Scene {
   // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
-    if (!d || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando) return;
+    if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando) return;
     if (this.time.now < this.vilaoProximoDesvio) return;
 
     this.vilaoProximoDesvio = this.time.now + d.cooldown;
@@ -333,7 +342,7 @@ class CenaLuta extends Phaser.Scene {
       const naMira = Math.abs(t.g.x - this.vilao.x) <= cfg.alcanceCorpo;
       const noChao = !this.vilaoNoAr && this.vilaoAltura < cfg.altura + 4;
 
-      if (naMira && noChao && !this.vilaoEsquivando && !this.fimDeJogo) {
+      if (naMira && noChao && this.emCombate && !this.vilaoEsquivando && !this.fimDeJogo) {
         t.g.destroy();
         this.danoNoVilao(cfg.dano, this.cfg.sons.dano);
         continue;
@@ -743,20 +752,8 @@ class CenaLuta extends Phaser.Scene {
     }).catch((erro) => console.error('Erro ao salvar ranking:', erro));
   }
 
-  // ---------- loop principal ----------
-
-  update(tempo, delta) {
-    // durante a entrada e os diálogos, a luta fica parada
-    if (this.emEntrada) {
-      this.atualizarEntrada(delta);
-      return;
-    }
-
-    if (this.fimDeJogo) return; // luta acabou: as animações de morte cuidam do resto
-
-    // cronômetro da luta: para quando a luta acaba, junto com o tempo gravado no ranking
-    this.textoTimer.setText(formatarCronometro(this.time.now - this.inicioLuta));
-
+  // botões do herói: soco, tiro, agachar, pulo e gravidade. Funcionam na entrada e na luta.
+  acoesDoHeroi(delta) {
     const passo = (velocidade) => (velocidade * delta) / 1000;
 
     // soco
@@ -801,28 +798,34 @@ class CenaLuta extends Phaser.Scene {
     }
     this.heroi.y = CHAO_Y - this.heroiAltura;
 
-    // andar: não anda enquanto ataca ou está agachado
-    if (!this.heroiAtacando && !this.heroiAgachado) {
+    // pose do pulo, quando o herói está no ar e não está socando nem atirando
+    if (this.heroiNoAr && !this.heroiAtacando) this.heroi.setTexture('heroi-andar', POSE_PULO);
+
+    // andar durante a luta (na entrada, quem anda é atualizarEntrada)
+    if (!this.emEntrada && !this.heroiAtacando && !this.heroiAgachado) {
       const esquerda = this.teclas.left.isDown || this.toque.esquerda;
       const direita = this.teclas.right.isDown || this.toque.direita;
 
       const velocidade = this.heroiNoAr ? VELOCIDADE_NO_AR : VELOCIDADE_HEROI;
+      const xAntes = this.heroi.x;
       if (esquerda) this.heroi.x -= passo(velocidade);
       else if (direita) this.heroi.x += passo(velocidade);
 
-      if (this.heroiNoAr) {
-        this.heroi.stop();
-        this.heroi.setTexture('heroi-andar', POSE_PULO);
-      } else if (esquerda || direita) {
-        this.heroi.play('heroi-andar', true);
-      } else {
-        this.heroi.stop();
-        this.heroi.setFrame(0);
+      // andou de verdade? a regra de corpo do quadro anterior pode ter travado o movimento
+      const andou = Math.abs(this.heroi.x - xAntes) > 0.01 && !this.heroiBloqueado;
+
+      if (!this.heroiNoAr) {
+        if (andou) {
+          this.heroi.play('heroi-andar', true);
+        } else {
+          this.heroi.stop();
+          this.heroi.setFrame(0);
+        }
       }
     }
 
-    // o soco acerta no quadro em que o braço está esticado (quadros 2 e 3)
-    if (this.heroiAtacando && !this.socoAcertou && this.heroi.texture.key === 'heroi-soco') {
+    // o soco acerta no quadro em que o braço está esticado (quadros 2 e 3); só depois que a luta começa
+    if (this.emCombate && this.heroiAtacando && !this.socoAcertou && this.heroi.texture.key === 'heroi-soco') {
       const quadroAtual = Number(this.heroi.frame.name);
       const perto = Math.abs(this.vilao.x - this.heroi.x) <= ALCANCE_SOCO;
       if (quadroAtual >= 2 && perto) {
@@ -832,10 +835,29 @@ class CenaLuta extends Phaser.Scene {
           flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'MISS');
         } else {
           this.causarDano();
-          if (this.fimDeJogo) return;
         }
       }
     }
+  }
+
+  // ---------- loop principal ----------
+
+  update(tempo, delta) {
+    // entrada e diálogos: o herói anda e pode testar os botões; o vilão ainda não age
+    if (this.emEntrada) {
+      this.atualizarEntrada(delta);
+      this.acoesDoHeroi(delta);
+      this.atualizarTiros(delta);
+      return;
+    }
+
+    if (this.fimDeJogo) return; // luta acabou: as animações de morte cuidam do resto
+
+    // cronômetro da luta: para quando a luta acaba, junto com o tempo gravado no ranking
+    this.textoTimer.setText(formatarCronometro(this.time.now - this.inicioLuta));
+
+    this.acoesDoHeroi(delta);
+    if (this.fimDeJogo) return;
 
     // balas em voo
     this.atualizarTiros(delta);
@@ -851,6 +873,7 @@ class CenaLuta extends Phaser.Scene {
 
     // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
     // A velocidade, as distâncias e os golpes vêm da fase de cada vilão
+    const passo = (velocidade) => (velocidade * delta) / 1000;
     const distancia = Math.abs(this.vilao.x - this.heroi.x);
     const direcao = this.heroi.x < this.vilao.x ? -1 : 1;
 
@@ -872,13 +895,35 @@ class CenaLuta extends Phaser.Scene {
     if (!this.vilaoAtacando) this.virarVilao(this.heroi.x < this.vilao.x);
     this.heroi.setFlipX(this.vilao.x < this.heroi.x);
 
+    // corpos: no chão, o herói e o vilão não se sobrepõem nem trocam de lado.
+    // No ar, acima da altura de passagem, o herói pode cruzar por cima do vilão.
+    const margem = this.cfg.margemCorpo || 30;
+    const passagem = this.cfg.alturaPassagem || 40;
+    const xAntesRegra = this.heroi.x;
+
+    if (this.heroiAltura < passagem) {
+      const dx = this.heroi.x - this.vilao.x;
+      if (Math.abs(dx) >= 1) this.ladoHeroi = Math.sign(dx);
+
+      if (this.ladoHeroi < 0) {
+        this.heroi.x = Math.min(this.heroi.x, this.vilao.x - margem);
+        this.vilao.x = Math.max(this.vilao.x, this.heroi.x + margem);
+      } else {
+        this.heroi.x = Math.max(this.heroi.x, this.vilao.x + margem);
+        this.vilao.x = Math.min(this.vilao.x, this.heroi.x - margem);
+      }
+    }
+
+    // a regra de corpo travou o herói neste quadro? usado pela animação de andar no próximo quadro
+    this.heroiBloqueado = Math.abs(this.heroi.x - xAntesRegra) > 0.01;
+
     // não deixa sair da tela
     this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 480);
     this.vilao.x = Phaser.Math.Clamp(this.vilao.x, 32, 480);
   }
 }
 
-new Phaser.Game({
+window.game = new Phaser.Game({
   type: Phaser.AUTO,
   width: 512,
   height: 224,
@@ -888,5 +933,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings]
+  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final]
 });

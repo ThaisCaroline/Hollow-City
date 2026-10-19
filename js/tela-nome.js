@@ -7,6 +7,7 @@ class TelaNome extends Phaser.Scene {
 
   create() {
     this.confirmado = false;
+    this.saindo = false;
 
     this.add.image(0, 0, 'cenario').setOrigin(0, 0);
     this.add.rectangle(0, 0, 512, 224, 0x000000, 0.6).setOrigin(0, 0);
@@ -33,9 +34,21 @@ class TelaNome extends Phaser.Scene {
       color: '#ffffff',
       backgroundColor: '#000000',
       padding: { x: 12, y: 6 }
-    }).setOrigin(0.5).setInteractive();
-
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     botao.on('pointerdown', () => this.confirmar());
+
+    const voltar = this.add.text(256, 206, 'BACK', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 3 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    voltar.on('pointerdown', () => this.voltar());
+
+    // o campo HTML é removido sempre que a cena termina, por qualquer caminho
+    this.events.once('shutdown', () => this.removerCampo());
 
     this.criarCampo();
   }
@@ -75,10 +88,24 @@ class TelaNome extends Phaser.Scene {
     campo.focus();
   }
 
-  confirmar() {
-    if (this.confirmado) return;
+  removerCampo() {
+    if (this.campoNome && this.campoNome.parentNode) this.campoNome.remove();
+    this.campoNome = null;
+  }
 
-    const nome = this.campoNome.value.trim();
+  voltar() {
+    if (this.confirmado || this.saindo) return;
+    this.saindo = true;
+
+    this.removerCampo();
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('TelaInicial'));
+  }
+
+  confirmar() {
+    if (this.confirmado || this.saindo) return;
+
+    const nome = this.campoNome ? this.campoNome.value.trim() : '';
     if (!nome) {
       this.aviso.setText('ENTER A NAME');
       return;
@@ -87,8 +114,12 @@ class TelaNome extends Phaser.Scene {
     this.confirmado = true;
     this.game.nomeJogador = nome.slice(0, 12); // fica guardado enquanto a página estiver aberta
     this.game.runId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); // identifica esta run
-    this.campoNome.remove();
 
+    // nova run: começa do zero, sem as lutas já liberadas da run anterior
+    this.game.progresso = 0;
+    this.game.fasesVistas = {};
+
+    this.removerCampo();
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Mapa', { fase: 0 }));
   }
