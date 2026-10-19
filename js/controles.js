@@ -2,17 +2,16 @@
 // Setas de movimento no canto inferior esquerdo; no canto inferior direito, cima e baixo com os ataques.
 // A seta para cima (SETA_CIMA) vem do config.js.
 
-// posições (em pixels da tela de 512 x 224)
 const BOTAO = {
   // setas de movimento (lado esquerdo)
   esquerda: { x: 36, y: 190, r: 15 },
   direita: { x: 104, y: 190, r: 15 },
 
-  // lado direito: setas para cima/baixo e ataques
-  cima: { x: 428, y: 150, r: 15 },   // pulo (todas as fases)
-  baixo: { x: 428, y: 190, r: 15 },  // agachar (só luta 2)
-  tiro: { x: 470, y: 150, r: 15 },   // ataque especial, menor (só luta 2)
-  soco: { x: 480, y: 196, r: 22 }    // ataque padrão, maior
+  // lado direito: cima e baixo maiores, tiro menor e soco o maior
+  cima: { x: 425, y: 125, r: 20 },   // pulo (todas as fases)
+  baixo: { x: 425, y: 180, r: 20 },  // agachar (só luta 2)
+  tiro: { x: 470, y: 125, r: 17 },   // ataque especial (só luta 2)
+  soco: { x: 482, y: 185, r: 24 }    // ataque padrão, o maior
 };
 
 // seta para baixo ('#' = pixel aceso)
@@ -67,7 +66,7 @@ function desenharBotao(cena, pos, cor) {
   g.fillCircle(pos.x, pos.y, pos.r);
   g.lineStyle(1, 0xffffff, 0.35);
   g.strokeCircle(pos.x, pos.y, pos.r);
-  return cena.add.zone(pos.x, pos.y, pos.r * 2 + 8, pos.r * 2 + 8).setInteractive().setDepth(12);
+  return cena.add.zone(pos.x, pos.y, pos.r * 2 + 24, pos.r * 2 + 24).setInteractive().setDepth(12);
 }
 
 // botão que só vale enquanto está pressionado (andar, agachar)

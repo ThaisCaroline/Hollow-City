@@ -27,13 +27,13 @@ const FASE2 = {
 
   // golpes do ogro
   golpes: {
-    intervalo: 1700,          // um ataque a cada 1,7 segundo
+    intervalo: 1600,          // um ataque a cada 1,6 segundo
     // clava: golpe alto, desviado agachando
     clava: {
       dano: 40,
       alcance: 80,
       desviaCom: ['agachar', 'pulo'],   // a clava pode ser desviada agachando ou pulando
-      aviso: 600,             // aviso laranja de 0,6 s
+      aviso: 500,             // aviso laranja de 0,5 s
       avanco: { distancia: 24, duracao: 80 }  // avanço rápido do golpe
     },
     // pisão: o ogro pula e cai no chão; quem estiver no chão perto leva dano

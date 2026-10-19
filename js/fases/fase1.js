@@ -21,10 +21,10 @@ const FASE1 = {
   golpes: {
     intervalo: 1000,         // um ataque a cada 1 segundo
     clava: {
-      dano: 25,
-      alcance: 75,
+      dano: 23,
+      alcance: 65,
       desviaCom: 'pulo',
-      aviso: 450             // aviso laranja de 0,45 s
+      aviso: 500             // aviso laranja de 0,5 s
     }
   },
 

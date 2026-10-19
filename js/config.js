@@ -1,7 +1,7 @@
 // Todas as constantes do jogo. Mude os valores aqui.
 // As constantes do vilão (vida, dano, velocidade, distâncias, esquiva) ficam em cada fase (fases/fase1.js, fases/fase2.js).
 
-const VELOCIDADE_HEROI = 45;   // pixels por segundo
+const VELOCIDADE_HEROI = 60;   // pixels por segundo
 const ALCANCE_SOCO = 75;       // distância máxima para o soco do herói acertar
 
 const DANO_SOCO = 10;
