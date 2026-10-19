@@ -1,5 +1,5 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos da fase em fases/fase1.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos e sprites da fase em fases/fase1.js.
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -15,13 +15,13 @@ class CenaLuta extends Phaser.Scene {
     // os sons são carregados na tela inicial (tela-inicial.js)
 
     this.load.image('cenario', 'assets/cenario-noite.png');
-    this.load.spritesheet('vilao-andar', 'assets/vilao-andar.png', {
-      frameWidth: 32,
-      frameHeight: 48
+    this.load.spritesheet('vilao-andar', FASE1.sprites.andar, {
+      frameWidth: FASE1.sprites.largura,
+      frameHeight: FASE1.sprites.altura
     });
-    this.load.spritesheet('vilao-surgir', 'assets/vilao-surgir.png', {
-      frameWidth: 32,
-      frameHeight: 48
+    this.load.spritesheet('vilao-surgir', FASE1.sprites.surgir, {
+      frameWidth: FASE1.sprites.largura,
+      frameHeight: FASE1.sprites.altura
     });
     this.load.spritesheet('heroi-andar', 'assets/heroi-andar.png', {
       frameWidth: 32,
