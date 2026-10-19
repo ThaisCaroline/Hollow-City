@@ -1,5 +1,5 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos da fase em fases/fase1.js.
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -181,7 +181,7 @@ class CenaLuta extends Phaser.Scene {
     this.heroi.stop();
     this.heroi.setFrame(0);
 
-    mostrarDialogo(this, 'DETECTIVE', 'So you are the one they sent. Who leads these monsters?', () => this.chegaBruxa(), RETRATO_HEROI);
+    mostrarDialogo(this, 'DETECTIVE', FASE1.dialogoHeroi, () => this.chegaBruxa(), RETRATO_HEROI);
   }
 
   // a bruxa entra pela direita e fala antes da luta
@@ -198,7 +198,7 @@ class CenaLuta extends Phaser.Scene {
       ease: 'Linear',
       onComplete: () => {
         this.vilaoParado();
-        mostrarDialogo(this, 'WITCH', 'Turn back, detective. Some questions are better left unanswered.', () => this.comecarCombate(), RETRATO_BRUXA);
+        mostrarDialogo(this, FASE1.nome, FASE1.dialogoBruxa, () => this.comecarCombate(), RETRATO_BRUXA);
       }
     });
   }
