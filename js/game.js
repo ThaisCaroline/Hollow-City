@@ -1,5 +1,5 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos, sprites e animações da bruxa em fases/fase1.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; sprites, texturas e animações do vilão em fases/fase1.js.
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -15,14 +15,7 @@ class CenaLuta extends Phaser.Scene {
     // os sons são carregados na tela inicial (tela-inicial.js)
 
     this.load.image('cenario', 'assets/cenario-noite.png');
-    this.load.spritesheet('vilao-andar', FASE1.sprites.andar, {
-      frameWidth: FASE1.sprites.largura,
-      frameHeight: FASE1.sprites.altura
-    });
-    this.load.spritesheet('vilao-surgir', FASE1.sprites.surgir, {
-      frameWidth: FASE1.sprites.largura,
-      frameHeight: FASE1.sprites.altura
-    });
+    carregarVilao(this);
     this.load.spritesheet('heroi-andar', 'assets/heroi-andar.png', {
       frameWidth: 32,
       frameHeight: 32
@@ -45,7 +38,7 @@ class CenaLuta extends Phaser.Scene {
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
 
-    // cores e animações da bruxa ficam em fases/fase1.js
+    // cores e animações do vilão ficam em fases/fase1.js
     prepararVilao(this);
 
     // animações do herói (ficam aqui, porque o herói é o mesmo em todas as fases)
@@ -83,7 +76,7 @@ class CenaLuta extends Phaser.Scene {
     this.heroiAltura = 0;
     this.velocidadeY = 0;
 
-    this.vilao = this.add.sprite(360, CHAO_Y, 'vilao-preto').setOrigin(0.5, 1).setScale(2);
+    this.vilao = this.add.sprite(360, CHAO_Y, FASE1.texturas.parado).setOrigin(0.5, 1).setScale(2);
     this.vilao.setFrame(0);
     this.vilao.setVisible(!comEntrada);
     this.vilaoAtacando = false;
@@ -148,12 +141,12 @@ class CenaLuta extends Phaser.Scene {
     mostrarDialogo(this, 'DETECTIVE', FASE1.dialogoHeroi, () => this.chegaBruxa(), RETRATO_HEROI);
   }
 
-  // a bruxa entra pela direita e fala antes da luta
+  // o vilão entra pela direita e fala antes da luta
   chegaBruxa() {
     this.vilao.setVisible(true);
     this.vilao.x = 500;
     this.vilao.setFlipX(true);
-    this.vilao.play('vilao-andar', true);
+    this.vilao.play(FASE1.anims.andar, true);
 
     this.tweens.add({
       targets: this.vilao,
@@ -270,7 +263,7 @@ class CenaLuta extends Phaser.Scene {
   causarDano() {
     tocarSom(this, 'soco');
 
-    // no modo virada, o soco tira mais vida da Morte
+    // no modo virada, o soco tira mais vida do vilão
     const dano = this.emVirada ? DANO_SOCO_VIRADA : DANO_SOCO;
     this.vilaoVida = Math.max(0, this.vilaoVida - dano);
     desenharBarras(this);
@@ -295,7 +288,7 @@ class CenaLuta extends Phaser.Scene {
     cam.zoomTo(1.5, 500);
     cam.pan(Phaser.Math.Clamp(this.vilao.x, 171, 341), 148, 500);
 
-    this.vilao.play('vilao-morte');
+    this.vilao.play(FASE1.anims.morte);
     this.vilao.once('animationcomplete', () => {
       this.anims.globalTimeScale = 1;
       cam.zoomTo(1, 400);
@@ -322,7 +315,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoAtacando = true;
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
-    // a Morte mira para o lado em que o herói estava quando o aviso começou
+    // o vilão mira para o lado em que o herói estava quando o aviso começou
     const dir = this.heroi.x < this.vilao.x ? -1 : 1;
 
     this.time.delayedCall(450, () => {
@@ -343,7 +336,7 @@ class CenaLuta extends Phaser.Scene {
           this.danoNoHeroi();
         }
       } else if (alcancou && !heroiNaFrente) {
-        this.mostrarEsquiva(); // herói passou para trás dela: o golpe pegou só o ar
+        this.mostrarEsquiva(); // herói passou para trás dele: o golpe pegou só o ar
       }
 
       this.time.delayedCall(300, () => {
@@ -353,14 +346,14 @@ class CenaLuta extends Phaser.Scene {
     });
   }
 
-  // Morte parada em pé: sempre o quadro 0 da textura de andar.
-  // (setFrame(0) sozinho usaria a textura atual, que depois da esquiva é a de surgir do chão = monte de terra)
+  // vilão parado em pé: sempre o quadro 0 da textura de andar.
+  // (setFrame(0) sozinho usaria a textura atual, que depois da esquiva é a de surgir do chão)
   vilaoParado() {
     this.vilao.stop();
-    this.vilao.setTexture('vilao-preto', 0);
+    this.vilao.setTexture(FASE1.texturas.parado, 0);
   }
 
-  // a Morte tenta esquivar quando o herói soca perto dela (com tempo de recarga)
+  // o vilão tenta esquivar quando o herói soca perto dele (com tempo de recarga)
   tentarEsquivar() {
     const perto = Math.abs(this.vilao.x - this.heroi.x) <= ALCANCE_SOCO;
     const livre = !this.vilaoAtacando && !this.vilaoEsquivando;
@@ -373,7 +366,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoEsquivando = true;
     this.vilaoInvulneravel = true; // enquanto está debaixo da terra, o soco não pega
     this.vilao.clearTint();
-    this.vilao.play('vilao-afundar');
+    this.vilao.play(FASE1.anims.afundar);
 
     this.vilao.once('animationcomplete', () => {
       if (this.fimDeJogo) return;
@@ -385,9 +378,9 @@ class CenaLuta extends Phaser.Scene {
         const lado = this.vilao.x > this.heroi.x ? -1 : 1;
         this.vilao.x = Phaser.Math.Clamp(this.heroi.x + lado * 50, 32, 480);
 
-        // vulnerável enquanto sai do chão: é a hora de socá-la
+        // vulnerável enquanto sai do chão: é a hora de socá-lo
         this.vilaoInvulneravel = false;
-        this.vilao.play('vilao-surgir');
+        this.vilao.play(FASE1.anims.surgir);
 
         this.vilao.once('animationcomplete', () => {
           if (this.fimDeJogo) return;
@@ -498,7 +491,7 @@ class CenaLuta extends Phaser.Scene {
       this.vilaoAtacar();
     } else if (distancia > DISTANCIA_LUTA) {
       this.vilao.x += direcao * passo(VELOCIDADE_VILAO);
-      this.vilao.play('vilao-andar', true);
+      this.vilao.play(FASE1.anims.andar, true);
     } else {
       this.vilaoParado();
     }
