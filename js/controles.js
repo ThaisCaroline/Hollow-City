@@ -1,5 +1,5 @@
 // Botões de toque no estilo teclado e Free Fire.
-// Cruz de movimento no canto inferior esquerdo (cima = pulo, baixo = agachar), ações no canto inferior direito.
+// Cruz de movimento no canto inferior esquerdo (cima = pulo, baixo = agachar só na luta 2), ações no canto inferior direito.
 // A seta para cima (SETA_CIMA) vem do config.js.
 
 // posições (em pixels da tela de 512 x 224)
@@ -60,21 +60,19 @@ function desenharArma(cena, cx, cy) {
   g.fillRect(x0, y0 + 7, 4, 5);    // cabo
 }
 
-// desenha o fundo do botão. Se não estiver ativo, fica apagado e sem toque.
-function desenharBotao(cena, pos, cor, ativo = true) {
+// desenha o fundo redondo do botão e devolve a área de toque
+function desenharBotao(cena, pos, cor) {
   const g = cena.add.graphics().setDepth(10);
-  g.fillStyle(cor, ativo ? 0.28 : 0.1);
+  g.fillStyle(cor, 0.28);
   g.fillCircle(pos.x, pos.y, pos.r);
-  g.lineStyle(1, 0xffffff, ativo ? 0.35 : 0.12);
+  g.lineStyle(1, 0xffffff, 0.35);
   g.strokeCircle(pos.x, pos.y, pos.r);
-  if (!ativo) return null;
   return cena.add.zone(pos.x, pos.y, pos.r * 2 + 8, pos.r * 2 + 8).setInteractive().setDepth(12);
 }
 
 // botão que só vale enquanto está pressionado (andar, agachar)
-function botaoSegurar(cena, pos, cor, chave, ativo = true) {
-  const zona = desenharBotao(cena, pos, cor, ativo);
-  if (!zona) return;
+function botaoSegurar(cena, pos, cor, chave) {
+  const zona = desenharBotao(cena, pos, cor);
   zona.on('pointerdown', () => { cena.toque[chave] = true; });
   zona.on('pointerup', () => { cena.toque[chave] = false; });
   zona.on('pointerout', () => { cena.toque[chave] = false; });
@@ -97,13 +95,15 @@ function criarControlesDeToque(cena) {
   botaoSegurar(cena, BOTAO.direita, 0x444444, 'direita');
   setaLateral(cena, BOTAO.direita.x, BOTAO.direita.y, 'direita');
 
-  // cima = pulo
+  // cima = pulo (aparece em todas as fases)
   botaoToque(cena, BOTAO.cima, 0xffffff, 'pulo');
   desenharIcone(cena, SETA_CIMA, BOTAO.cima.x, BOTAO.cima.y, 2);
 
-  // baixo = agachar. Na luta 1 ele aparece apagado, porque ainda não existe esse golpe
-  botaoSegurar(cena, BOTAO.baixo, 0x3a7bd5, 'agachar', !!cena.cfg.agachar);
-  desenharIcone(cena, SETA_BAIXO, BOTAO.baixo.x, BOTAO.baixo.y, 2);
+  // baixo = agachar: só existe na fase 2, então só é desenhado nela
+  if (cena.cfg.agachar) {
+    botaoSegurar(cena, BOTAO.baixo, 0x3a7bd5, 'agachar');
+    desenharIcone(cena, SETA_BAIXO, BOTAO.baixo.x, BOTAO.baixo.y, 2);
+  }
 
   // ações
   if (cena.cfg.tiro) {

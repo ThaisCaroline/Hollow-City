@@ -699,8 +699,10 @@ class CenaLuta extends Phaser.Scene {
     if (querAgachar && podeAgachar) this.agachar();
     else if (this.heroiAgachado) this.levantar();
 
-    // pulo (não pula agachado)
-    const pediuPulo = Phaser.Input.Keyboard.JustDown(this.teclaPulo) || this.toque.pulo;
+    // pulo: barra de espaço, seta para cima do teclado ou botão de cima na tela (não pula agachado)
+    const pediuPulo = Phaser.Input.Keyboard.JustDown(this.teclaPulo)
+      || Phaser.Input.Keyboard.JustDown(this.teclas.up)
+      || this.toque.pulo;
     this.toque.pulo = false;
     if (pediuPulo && !this.heroiNoAr && !this.heroiAtacando && !this.heroiAgachado) {
       this.heroiNoAr = true;
