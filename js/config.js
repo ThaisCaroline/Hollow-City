@@ -49,7 +49,8 @@ const SONS = {
   'pulo1': 'assets/audio/jump1.wav',
   'pulo2': 'assets/audio/pulo2.wav',
   'pulo3': 'assets/audio/pulo3.wav',
-  'musica-luta': 'assets/audio/musica-luta.mp3'
+  'musica-luta': 'assets/audio/musica-luta.mp3',
+  'ogro-dano': 'assets/audio/orc-grunt.wav',
 };
 
 // sons de pulo, sorteados a cada pulo
