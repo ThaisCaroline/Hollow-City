@@ -1,5 +1,5 @@
 // A cena de luta: herói, vilão e o loop principal.
-// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos e sprites da fase em fases/fase1.js.
+// Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js; textos, sprites e animações da bruxa em fases/fase1.js.
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -45,47 +45,11 @@ class CenaLuta extends Phaser.Scene {
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
 
-    // prepara as cores do vilão (só na primeira vez, não ao reiniciar a luta)
-    if (!this.textures.exists('vilao-preto')) {
-      recolorir(this, 'vilao-andar', 'vilao-preto', CAPA_PRETA, 32, 48);
-      recolorir(this, 'vilao-surgir', 'vilao-surgir-preto', CAPA_PRETA, 32, 48);
-    }
+    // cores e animações da bruxa ficam em fases/fase1.js
+    prepararVilao(this);
 
-    if (!this.anims.exists('vilao-andar')) {
-      this.anims.create({
-        key: 'vilao-andar',
-        frames: this.anims.generateFrameNumbers('vilao-preto', { start: 0, end: 5 }),
-        frameRate: 8,
-        repeat: -1
-      });
-
-      // quadros do "surgir do chão", sem os que mostram a mão, a lâmina e o braço esticado
-      // (10 e 9 = em pé, 8 = agachada, 1 e 0 = monte de terra)
-      const AFUNDAR = [10, 9, 8, 1, 0];
-
-      // a morte do vilão é afundar no chão
-      this.anims.create({
-        key: 'vilao-morte',
-        frames: this.anims.generateFrameNumbers('vilao-surgir-preto', { frames: AFUNDAR }),
-        frameRate: 5,
-        repeat: 0
-      });
-
-      // esquiva: afunda no chão (rápido) e depois sai do chão atrás do herói
-      this.anims.create({
-        key: 'vilao-afundar',
-        frames: this.anims.generateFrameNumbers('vilao-surgir-preto', { frames: AFUNDAR }),
-        frameRate: 12,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'vilao-surgir',
-        frames: this.anims.generateFrameNumbers('vilao-surgir-preto', { frames: [...AFUNDAR].reverse() }),
-        frameRate: 7,
-        repeat: 0
-      });
-
+    // animações do herói (ficam aqui, porque o herói é o mesmo em todas as fases)
+    if (!this.anims.exists('heroi-andar')) {
       this.anims.create({
         key: 'heroi-andar',
         frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 5 }),
