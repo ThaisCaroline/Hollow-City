@@ -11,7 +11,7 @@ const DANO_SOCO = 10;
 const DANO_SOCO_VIRADA = 15;   // dano do soco com o herói no modo virada
 const DANO_VILAO = 25;
 const VIDA_HEROI = 140;
-const VIDA_VILAO = 250;        // vida da Morte (200 = 20 socos)
+const VIDA_VILAO = 250;        // vida da Morte (250 = 25 socos)
 const LIMITE_VIRADA = VIDA_HEROI * 0.3; // abaixo disso, o herói entra no modo virada
 
 const CHAO_Y = 205;            // posição dos pés dos lutadores no chão
@@ -51,6 +51,7 @@ const SONS = {
   'pulo3': 'assets/audio/pulo3.wav',
   'musica-luta': 'assets/audio/musica-luta.mp3',
   'ogro-dano': 'assets/audio/orc-grunt.wav',
+  'tiro': 'assets/audio/tiro.wav',
 };
 
 // sons de pulo, sorteados a cada pulo

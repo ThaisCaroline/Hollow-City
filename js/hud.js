@@ -5,41 +5,43 @@ function criarBarrasDeVida(cena) {
   cena.barras = cena.add.graphics().setDepth(20);
 
   const estilo = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff' };
+  const larguraVilao = cena.cfg.barraLargura || 180;
   cena.add.text(12, 22, 'HERO', estilo).setDepth(21);
-  cena.add.text(500, 22, 'VILLAIN', estilo).setOrigin(1, 0).setDepth(21);
+  cena.add.text(512 - 12 - larguraVilao, 22, cena.cfg.nome === 'OGRE' ? 'OGRE' : 'VILLAIN', estilo).setDepth(21);
 
   desenharBarras(cena);
 }
 
 function desenharBarras(cena) {
-  const largura = 180;
   const altura = 10;
   const y = 8;
+  const larguraHeroi = 120;
+  const larguraVilao = cena.cfg.barraLargura || 180;
   const xHeroi = 12;
-  const xVilao = 512 - 12 - largura;
+  const xVilao = 512 - 12 - larguraVilao;
 
   const g = cena.barras;
   g.clear();
 
   // fundo e borda
   g.fillStyle(0x000000, 0.7);
-  g.fillRect(xHeroi - 2, y - 2, largura + 4, altura + 4);
-  g.fillRect(xVilao - 2, y - 2, largura + 4, altura + 4);
+  g.fillRect(xHeroi - 2, y - 2, larguraHeroi + 4, altura + 4);
+  g.fillRect(xVilao - 2, y - 2, larguraVilao + 4, altura + 4);
   g.fillStyle(0x4a1010, 1);
-  g.fillRect(xHeroi, y, largura, altura);
-  g.fillRect(xVilao, y, largura, altura);
+  g.fillRect(xHeroi, y, larguraHeroi, altura);
+  g.fillRect(xVilao, y, larguraVilao, altura);
 
-  // vida atual: a do herói esvazia da direita para a esquerda, a do vilão ao contrário
-  const larguraHeroi = largura * (cena.heroiVida / VIDA_HEROI);
-  const larguraVilao = largura * (cena.vilaoVida / VIDA_VILAO);
+  // vida atual de cada lado
+  const vidaHeroi = larguraHeroi * (cena.heroiVida / VIDA_HEROI);
+  const vidaVilao = larguraVilao * (cena.vilaoVida / cena.vilaoVidaMax);
 
   // no modo virada, a barra do herói pisca em vermelho
   const corHeroi = cena.emVirada && cena.piscaOn ? 0xff3030 : 0xffd23f;
   g.fillStyle(corHeroi, 1);
-  g.fillRect(xHeroi, y, larguraHeroi, altura);
+  g.fillRect(xHeroi, y, vidaHeroi, altura);
 
   g.fillStyle(0xffd23f, 1);
-  g.fillRect(xVilao + (largura - larguraVilao), y, larguraVilao, altura);
+  g.fillRect(xVilao + (larguraVilao - vidaVilao), y, vidaVilao, altura);
 }
 
 // texto que sobe e some (DODGE!, MISS...)
