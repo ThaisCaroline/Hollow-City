@@ -64,6 +64,8 @@ class CenaLuta extends Phaser.Scene {
       frameWidth: 48,
       frameHeight: 48
     });
+    this.load.image('icone-soco', 'assets/icones/icone_soco.png');
+    this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
   }
 
   create() {

@@ -106,11 +106,10 @@ function criarControlesDeToque(cena) {
 
   // soco: ataque padrão, sempre o maior
   botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');
-  cena.add.image(BOTAO.soco.x, BOTAO.soco.y, 'heroi-soco', 3).setScale(1.2).setDepth(11).setAlpha(0.85);
-
+  cena.add.image(BOTAO.soco.x, BOTAO.soco.y, 'icone-soco').setDepth(11).setAlpha(0.9);
   // tiro: ataque especial, menor, só na luta 2
   if (cena.cfg.tiro) {
     botaoToque(cena, BOTAO.tiro, 0xffd23f, 'tiro');
-    desenharArma(cena, BOTAO.tiro.x, BOTAO.tiro.y);
+    cena.add.image(BOTAO.tiro.x, BOTAO.tiro.y, 'icone-tiro').setDepth(11).setAlpha(0.9);
   }
 }
