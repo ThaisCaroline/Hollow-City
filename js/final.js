@@ -130,7 +130,7 @@ class Final extends Phaser.Scene {
     let texto = slide.texto;
     if (slide.final) {
       const nome = this.game.nomeJogador || 'friend';
-      texto = `${slide.texto}\n\nThanks for playing, ${nome}!`;
+      texto = `${slide.texto}\nThanks for playing, ${nome}!`;
     }
 
     this.textoSlide

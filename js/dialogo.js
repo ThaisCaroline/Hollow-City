@@ -5,7 +5,7 @@ const RETRATO_HEROI = { chave: 'heroi-andar', frame: 0, escala: 1.8 };
 const RETRATO_BRUXA = { chave: 'vilao-preto', frame: 0, escala: 1.2 };
 
 function mostrarDialogo(cena, nome, texto, aoFechar, retrato = RETRATO_HEROI) {
-  const topo = 150;
+  const topo = 4;
   const elementos = [];
 
   elementos.push(cena.add.rectangle(256, topo + 36, 480, 72, 0x000000, 0.88)
