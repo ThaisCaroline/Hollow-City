@@ -1,5 +1,5 @@
 // Cutscene antes do boss final.
-// Passo 1: o herói entra andando no cenário vazio (sem monstros) e para.
+// Passo 1: o detetive entra andando no cenário vazio (sem monstros) e para.
 // Passo 2: corta para o slide 1 (boss no trono) e o slide 2 (goblin ajoelhado + fala do boss).
 // Passo 3 (em andamento): volta ao jogo com o cenário cheio; o boss chega andando e para; diálogos detetive/boss.
 
@@ -15,6 +15,9 @@ const CUTSCENE_ESPERA_DIALOGO = 2500;         // ms: o goblin fica na tela antes
 // retrato do boss na caixa de diálogo (imagem única, sem frames; a escala é calculada na hora da fala)
 const RETRATO_BOSS = { chave: 'boss-thumb', frame: '__BASE', escala: 1 };
 
+// retrato do detetive novo (frame de 48x48, por isso a escala é menor que a do herói antigo)
+const RETRATO_DETETIVE = { chave: 'detetive-idle', frame: 0, escala: 1.8 };
+
 class CutsceneBoss extends Phaser.Scene {
   constructor() {
     super('CutsceneBoss');
@@ -25,9 +28,15 @@ class CutsceneBoss extends Phaser.Scene {
     this.load.image('cena1', 'assets/cena1.jpg');
     this.load.image('cena2', 'assets/cena2.jpg');
     this.load.image('boss-thumb', 'assets/tumbBoss.png');
-    this.load.spritesheet('heroi-andar', 'assets/heroi-andar.png', {
-      frameWidth: 32,
-      frameHeight: 32
+
+    // detetive novo (frames 48x48, pés em y=39)
+    this.load.spritesheet('detetive-walk', 'assets/heroi/heroi_walk.png', {
+      frameWidth: 48,
+      frameHeight: 48
+    });
+    this.load.spritesheet('detetive-idle', 'assets/heroi/heroi_idle.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
 
     // passo 3
@@ -49,11 +58,20 @@ class CutsceneBoss extends Phaser.Scene {
       .setOrigin(0, 0)
       .setScale(CUTSCENE_CENARIO_ESCALA);
 
-    if (!this.anims.exists('heroi-andar')) {
+    if (!this.anims.exists('detetive-walk')) {
       this.anims.create({
-        key: 'heroi-andar',
-        frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 5 }),
+        key: 'detetive-walk',
+        frames: this.anims.generateFrameNumbers('detetive-walk', { start: 0, end: 7 }),
         frameRate: 8,
+        repeat: -1
+      });
+    }
+
+    if (!this.anims.exists('detetive-idle')) {
+      this.anims.create({
+        key: 'detetive-idle',
+        frames: this.anims.generateFrameNumbers('detetive-idle', { start: 0, end: 3 }),
+        frameRate: 5,
         repeat: -1
       });
     }
@@ -76,10 +94,11 @@ class CutsceneBoss extends Phaser.Scene {
       });
     }
 
-    this.heroi = this.add.sprite(-20, CHAO_Y, 'heroi-andar')
-      .setOrigin(0.5, 1)
+    // origem nos pés: frame 48x48 com os pés em y=39
+    this.heroi = this.add.sprite(-20, CHAO_Y, 'detetive-walk')
+      .setOrigin(0.5, 39 / 48)
       .setScale(2);
-    this.heroi.play('heroi-andar');
+    this.heroi.play('detetive-walk');
 
     // anda na mesma velocidade do jogo (VELOCIDADE_HEROI)
     const distancia = CUTSCENE_HEROI_PARA_EM - this.heroi.x;
@@ -91,8 +110,7 @@ class CutsceneBoss extends Phaser.Scene {
       duration: tempoAndando,
       ease: 'Linear',
       onComplete: () => {
-        this.heroi.stop();
-        this.heroi.setFrame(0);
+        this.heroi.play('detetive-idle');
       }
     });
 
@@ -191,6 +209,6 @@ class CutsceneBoss extends Phaser.Scene {
 
     mostrarDialogo(this, 'DETECTIVE', 'I came to send you back to hell.', () => {
       mostrarDialogo(this, 'SUN DEVOURER', 'Do your best, little human...', null, RETRATO_BOSS);
-    });
+    }, RETRATO_DETETIVE);
   }
 }

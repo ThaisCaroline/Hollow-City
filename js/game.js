@@ -5,6 +5,22 @@
 // ordem das lutas no caminho: bruxa, ogro, bruxa, ogro
 const FASES = [FASE1, FASE2, FASE1, FASE2];
 
+// herói novo: frames de 48x48 com os pés em y=39
+const HEROI_ORIGEM_Y = 39 / 48;
+
+// combo do herói: soco, soco, chute
+const DANO_CHUTE = 20;        // dano do 3º ataque seguido
+const JANELA_COMBO = 900;     // ms: tempo máximo, contado do início do ataque anterior, para o próximo entrar no combo
+
+// acertos por quadro da animação
+const QUADRO_ACERTO_SOCO = 5;         // braço esticado (último quadro)
+const QUADRO_ACERTO_CHUTE_INI = 3;    // perna esticada (quadros 3 e 4)
+const QUADRO_ACERTO_CHUTE_FIM = 4;
+
+// tiro: a bala sai quando o braço está levantado
+const TIRO_FPS = 18;
+const TIRO_QUADRO_DISPARO = 3;
+
 class CenaLuta extends Phaser.Scene {
   constructor() {
     super('CenaLuta');
@@ -23,25 +39,30 @@ class CenaLuta extends Phaser.Scene {
     this.load.image(this.cfg.cenarioChave, this.cfg.cenario);
     this.cfg.carregar(this);
 
-    this.load.spritesheet('heroi-andar', 'assets/heroi-andar.png', {
-      frameWidth: 32,
-      frameHeight: 32
+    // herói (frames 48x48)
+    this.load.spritesheet('heroi-andar', 'assets/heroi/heroi_walk.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
-    this.load.spritesheet('heroi-soco', 'assets/heroi-soco.png', {
-      frameWidth: 32,
-      frameHeight: 32
+    this.load.spritesheet('heroi-soco', 'assets/heroi/heroi_soco.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
-    this.load.spritesheet('heroi-morte', 'assets/heroi-morte.png', {
-      frameWidth: 46,
-      frameHeight: 32
+    this.load.spritesheet('heroi-chute', 'assets/heroi/heroi_chute.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
-    this.load.spritesheet('heroi-tiro', 'assets/shot.png', {
-      frameWidth: 32,
-      frameHeight: 32
+    this.load.spritesheet('heroi-morte', 'assets/heroi/heroi_morte.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
-    this.load.spritesheet('heroi-agachar', 'assets/crouch.png', {
-      frameWidth: 32,
-      frameHeight: 32
+    this.load.spritesheet('heroi-tiro', 'assets/heroi/heroi_tiro.png', {
+      frameWidth: 48,
+      frameHeight: 48
+    });
+    this.load.spritesheet('heroi-agachar', 'assets/heroi/heroi_crouch.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
   }
 
@@ -61,35 +82,42 @@ class CenaLuta extends Phaser.Scene {
     if (!this.anims.exists('heroi-andar')) {
       this.anims.create({
         key: 'heroi-andar',
-        frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 5 }),
+        frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 7 }),
         frameRate: 8,
         repeat: -1
       });
 
       this.anims.create({
         key: 'heroi-soco',
-        frames: this.anims.generateFrameNumbers('heroi-soco', { start: 0, end: 3 }),
-        frameRate: 14,
+        frames: this.anims.generateFrameNumbers('heroi-soco', { start: 0, end: 5 }),
+        frameRate: 18,
+        repeat: 0
+      });
+
+      this.anims.create({
+        key: 'heroi-chute',
+        frames: this.anims.generateFrameNumbers('heroi-chute', { start: 0, end: 6 }),
+        frameRate: 16,
         repeat: 0
       });
 
       this.anims.create({
         key: 'heroi-morte',
-        frames: this.anims.generateFrameNumbers('heroi-morte', { start: 0, end: 4 }),
-        frameRate: 8,
+        frames: this.anims.generateFrameNumbers('heroi-morte', { start: 0, end: 6 }),
+        frameRate: 9,
         repeat: 0
       });
 
       this.anims.create({
         key: 'heroi-tiro',
-        frames: this.anims.generateFrameNumbers('heroi-tiro', { start: 0, end: 2 }),
-        frameRate: 12,
+        frames: this.anims.generateFrameNumbers('heroi-tiro', { start: 0, end: 8 }),
+        frameRate: TIRO_FPS,
         repeat: 0
       });
 
       this.anims.create({
         key: 'heroi-agachar',
-        frames: this.anims.generateFrameNumbers('heroi-agachar', { start: 0, end: 5 }),
+        frames: this.anims.generateFrameNumbers('heroi-agachar', { start: 0, end: 4 }),
         frameRate: 14,
         repeat: 0
       });
@@ -99,7 +127,7 @@ class CenaLuta extends Phaser.Scene {
     const jaVista = (this.game.fasesVistas || {})[this.fase];
     const comEntrada = !jaVista;
 
-    this.heroi = this.add.sprite(comEntrada ? 40 : 150, CHAO_Y, 'heroi-andar').setOrigin(0.5, 1).setScale(2);
+    this.heroi = this.add.sprite(comEntrada ? 40 : 150, CHAO_Y, 'heroi-andar').setOrigin(0.5, HEROI_ORIGEM_Y).setScale(2);
     this.heroi.setFrame(0);
     this.heroiAtacando = false;
     this.heroiMorrendo = false;
@@ -113,6 +141,8 @@ class CenaLuta extends Phaser.Scene {
     this.proximoTiro = 0;        // quando o herói pode atirar de novo (ms)
     this.puloPendenteAte = 0;    // até quando um toque no pulo fica guardado (ms)
     this.pulouNoAviso = false;   // true se o herói pulou durante o aviso do golpe atual
+    this.combo = 0;              // quantos ataques seguidos o herói encadeou
+    this.comboAte = 0;           // até quando o próximo ataque ainda entra no combo (ms)
 
     this.vilao = this.add.sprite(360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
@@ -252,18 +282,26 @@ class CenaLuta extends Phaser.Scene {
 
   // ---------- herói ----------
 
+  // soco; o 3º ataque seguido (dentro da janela do combo) vira chute
   socar() {
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
     if (this.time.now < this.proximoSoco) return;
     this.proximoSoco = this.time.now + COOLDOWN_SOCO;
 
+    // combo: dentro da janela soma 1; fora dela recomeça. No 3º ataque sai o chute e o combo zera.
+    if (this.time.now <= this.comboAte) this.combo++;
+    else this.combo = 1;
+    const chute = this.combo >= 3;
+    if (chute) this.combo = 0;
+    this.comboAte = this.time.now + JANELA_COMBO;
+
     this.heroiAtacando = true;
     this.socoAcertou = false;
-    this.heroi.play('heroi-soco');
+    this.heroi.play(chute ? 'heroi-chute' : 'heroi-soco');
     this.heroi.once('animationcomplete', () => {
       if (this.heroiMorrendo) return;
       this.heroiAtacando = false;
-      this.heroi.setFrame(0);
+      this.heroi.setTexture('heroi-andar', 0);
     });
     this.tentarEsquivar();
   }
@@ -281,7 +319,7 @@ class CenaLuta extends Phaser.Scene {
     this.heroi.setTexture('heroi-andar', 0);
   }
 
-  // tiro: uma bala por toque, com munição limitada; a bala sai na direção em que o herói está virado
+  // tiro: uma bala por toque, com munição limitada; a bala sai quando o braço está levantado
   atirar() {
     if (!this.cfg.tiro) return;
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
@@ -290,7 +328,6 @@ class CenaLuta extends Phaser.Scene {
     this.proximoTiro = this.time.now + COOLDOWN_TIRO;
 
     this.municao--;
-    tocarSom(this, this.cfg.sons.tiro || 'tiro');
     this.atualizarMunicao();
 
     this.heroiAtacando = true;
@@ -301,8 +338,13 @@ class CenaLuta extends Phaser.Scene {
       this.heroi.setTexture('heroi-andar', 0);
     });
 
-    const dir = this.heroi.flipX ? -1 : 1;
-    this.criarBala(this.heroi.x + dir * 30, dir);
+    // a bala e o som saem no quadro em que o braço está levantado
+    this.time.delayedCall((TIRO_QUADRO_DISPARO * 1000) / TIRO_FPS, () => {
+      if (this.fimDeJogo || this.heroiMorrendo) return;
+      tocarSom(this, this.cfg.sons.tiro || 'tiro');
+      const dir = this.heroi.flipX ? -1 : 1;
+      this.criarBala(this.heroi.x + dir * 30, dir);
+    });
   }
 
   criarBala(x, dir) {
@@ -450,7 +492,7 @@ class CenaLuta extends Phaser.Scene {
     this.danoNoVilao(dano, this.cfg.sons.dano);
   }
 
-  // tira vida do vilão e mostra o acerto: vale para soco e para tiro
+  // tira vida do vilão e mostra o acerto: vale para soco, chute e tiro
   danoNoVilao(dano, som) {
     // cada fase define o próprio som de dano (bruxa: soco; ogro: grunhido)
     tocarSom(this, som);
@@ -756,7 +798,7 @@ class CenaLuta extends Phaser.Scene {
   acoesDoHeroi(delta) {
     const passo = (velocidade) => (velocidade * delta) / 1000;
 
-    // soco
+    // soco (e chute, no 3º ataque seguido)
     const pediuSoco = Phaser.Input.Keyboard.JustDown(this.teclaSoco) || this.toque.soco;
     this.toque.soco = false;
     if (pediuSoco) this.socar();
@@ -798,7 +840,7 @@ class CenaLuta extends Phaser.Scene {
     }
     this.heroi.y = CHAO_Y - this.heroiAltura;
 
-    // pose do pulo, quando o herói está no ar e não está socando nem atirando
+    // pose do pulo, quando o herói está no ar e não está atacando
     if (this.heroiNoAr && !this.heroiAtacando) this.heroi.setTexture('heroi-andar', POSE_PULO);
 
     // andar durante a luta (na entrada, quem anda é atualizarEntrada)
@@ -824,15 +866,26 @@ class CenaLuta extends Phaser.Scene {
       }
     }
 
-    // o soco acerta no quadro em que o braço está esticado (quadros 2 e 3); só depois que a luta começa
-    if (this.emCombate && this.heroiAtacando && !this.socoAcertou && this.heroi.texture.key === 'heroi-soco') {
+    // acerto do ataque: soco no quadro com o braço esticado; chute nos quadros com a perna esticada.
+    // Só depois que a luta começa.
+    const textura = this.heroi.texture.key;
+    const emSoco = textura === 'heroi-soco';
+    const emChute = textura === 'heroi-chute';
+
+    if (this.emCombate && this.heroiAtacando && !this.socoAcertou && (emSoco || emChute)) {
       const quadroAtual = Number(this.heroi.frame.name);
       const perto = Math.abs(this.vilao.x - this.heroi.x) <= ALCANCE_SOCO;
-      if (quadroAtual >= 2 && perto) {
+      const noQuadroDeAcerto = emChute
+        ? (quadroAtual >= QUADRO_ACERTO_CHUTE_INI && quadroAtual <= QUADRO_ACERTO_CHUTE_FIM)
+        : quadroAtual >= QUADRO_ACERTO_SOCO;
+
+      if (noQuadroDeAcerto && perto) {
         this.socoAcertou = true;
         if (this.vilaoInvulneravel) {
           tocarSom(this, 'miss');
           flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'MISS');
+        } else if (emChute) {
+          this.danoNoVilao(DANO_CHUTE, this.cfg.sons.dano);
         } else {
           this.causarDano();
         }

@@ -17,7 +17,7 @@ const VELOCIDADE_PULO = 480;   // impulso inicial do pulo (pixels por segundo)
 const GRAVIDADE = 1400;
 const VELOCIDADE_NO_AR = 150;  // velocidade horizontal durante o pulo
 const ALTURA_ESQUIVA = 20;     // acima disso, o herói está no ar e o golpe passa por baixo
-const POSE_PULO = 3;           // quadro do andar usado como pose no ar
+const POSE_PULO = 2;           // quadro do andar usado como pose no ar
 
 // ícone do botão de pulo: seta para cima ('#' = pixel aceso)
 const SETA_CIMA = [
