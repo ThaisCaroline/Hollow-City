@@ -1,0 +1,36 @@
+# HANDOFF — Hollow City, boss final: animações (20/10/2026)
+
+## Contexto
+Jogo 2D de luta em Phaser 3.80.1 (512x224, pixelArt: true). Tudo que aparece no jogo é em inglês; as conversas são em português. Regras: uma etapa por vez, código em blocos no chat, arquivo completo só quando eu pedir "doc completo", não antecipar etapas que não pedi, não gerar prompts de imagem sem eu pedir.
+
+## Boss "Devorador de Sol" — spritesheets prontos (todos 128x128 por frame, boss olhando pra esquerda/West)
+- boss_ataque_basico.png (soco): 768x128, 6 frames
+- boss_ataque_fireball.png: 768x128, 6 frames
+- boss_walk.png: 1024x128, 8 frames
+- boss_death.png: 896x128, 7 frames (animação sem loop, último frame fica parado no chão)
+- Padronizados: boss com ~73 px de altura e pés perto de y=107 do frame (no walk os pés descem até ~111 nos passos; na morte, os frames deitados têm a base em y=107). Mesma origem e escala em todos, sem setScale.
+- Geradas na SpriteCook (créditos grátis) a partir do sprite do Pixellab (limite grátis do Pixellab acabou). Reescalei e montei os sheets com Python.
+- Detalhe de polimento (depois): o fogo da cabeça varia entre animações (walk tem coroa maior e amarelada; soco tem anel compacto laranja). Só mexer depois de ver rodando.
+
+## Decisões fechadas
+- Bola de fogo do boss: mesma mecânica da bala do herói, saindo da mão dele no frame 5 da fireball, indo pra esquerda e tirando vida do herói. Sem sprite novo por enquanto. Na hora de implementar, preciso mandar o código da bala do herói (game.js).
+- Boss terá 2 fases.
+
+## Faltam gerar (fase 1)
+1. Idle animado (parado)
+2. Taking Punch (apanhando). Enquanto não existir: flash branco + pequeno recuo no Phaser
+Já tenho o idle em pé do Pixellab (96x96); falta informar nome do arquivo e tamanho dos frames.
+
+## Fase 2 (deixada pra depois, pra não confundir)
+- Ideia: novo boneco após o power-up, com chifres e/ou armadura, gerado a partir do boss atual no Pixellab ("Describe the new state", desmarcando "Use color palette from reference").
+- Power-up pode ser efeito no Phaser (tremor + flash) com troca de sprite no meio.
+- Ataque novo: Leg Sweep (rasteira, herói desvia pulando); fireball em rajada.
+- Precisa de novo conjunto de animações para o boneco da fase 2 (idle, walk, soco, apanhando, morte, etc.).
+
+## Pendências antigas (cutscene e fluxo)
+- Cutscene (js/cutscene-boss.js, cena CutsceneBoss): passos 1 e 2 prontos; falta o passo 3 (voltar ao jogo com cenario4.jpg, boss chegando, diálogos detetive/boss em inglês).
+- Falta definir como a cutscene e a luta do boss entram no fluxo real (mapa, FASES, LUTAS); hoje só se chega nela pelo console: game.scene.getScenes(true)[0].scene.start('CutsceneBoss')
+- Herói de costas no fim da entrada: precisa de sprite novo, ainda não decidi como fazer.
+
+## Próximo passo
+Escolher qual animação da fase 1 gerar primeiro: idle animado ou Taking Punch.

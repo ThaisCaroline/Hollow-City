@@ -1,6 +1,7 @@
 // Cutscene antes do boss final.
 // Passo 1: o herói entra andando no cenário vazio (sem monstros) e para.
 // Passo 2: corta para o slide 1 (boss no trono) e o slide 2 (goblin ajoelhado + fala do boss).
+// Passo 3 (em andamento): volta ao jogo com o cenário cheio; o boss chega andando e para; diálogos detetive/boss.
 
 const CUTSCENE_CENARIO_ESCALA = 512 / 1376;   // largura da imagem -> largura da tela
 const CUTSCENE_CENARIO_Y = -42;               // sobe o fundo para a faixa de terra encostar nos pés (CHAO_Y)
@@ -28,6 +29,17 @@ class CutsceneBoss extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 32
     });
+
+    // passo 3
+    this.load.image('cenario-boss-cheio', 'assets/cenario4b.jpg');
+    this.load.spritesheet('boss-idle', 'assets/BossFase1/boss_idle.png', {
+      frameWidth: 128,
+      frameHeight: 128
+    });
+    this.load.spritesheet('boss-walk', 'assets/BossFase1/boss_walk.png', {
+      frameWidth: 128,
+      frameHeight: 128
+    });
   }
 
   create() {
@@ -41,6 +53,24 @@ class CutsceneBoss extends Phaser.Scene {
       this.anims.create({
         key: 'heroi-andar',
         frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 5 }),
+        frameRate: 8,
+        repeat: -1
+      });
+    }
+
+    if (!this.anims.exists('boss-idle')) {
+      this.anims.create({
+        key: 'boss-idle',
+        frames: this.anims.generateFrameNumbers('boss-idle', { start: 0, end: 3 }),
+        frameRate: 5,
+        repeat: -1
+      });
+    }
+
+    if (!this.anims.exists('boss-walk')) {
+      this.anims.create({
+        key: 'boss-walk',
+        frames: this.anims.generateFrameNumbers('boss-walk', { start: 0, end: 7 }),
         frameRate: 8,
         repeat: -1
       });
@@ -120,5 +150,47 @@ class CutsceneBoss extends Phaser.Scene {
       }),
       CUTSCENE_FADE_ENTRE_SLIDES
     );
+  }
+
+  // passo 3: volta ao jogo com o cenário cheio; o boss chega andando e para
+  passo3() {
+    if (this.slide) this.slide.destroy();
+
+    this.add.image(0, CUTSCENE_CENARIO_Y, 'cenario-boss-cheio')
+      .setOrigin(0, 0)
+      .setScale(CUTSCENE_CENARIO_ESCALA)
+      .setDepth(1);
+
+    // herói à frente do cenário cheio
+    this.heroi.setDepth(2);
+
+    // boss entra pela direita, fora da tela
+    this.boss = this.add.sprite(640, CHAO_Y, 'boss-walk')
+      .setOrigin(0.5, 107 / 128)
+      .setScale(2.6)
+      .setDepth(2);
+    this.boss.play('boss-walk');
+
+    this.tweens.add({
+      targets: this.boss,
+      x: 400,
+      duration: 3000,
+      ease: 'Linear',
+      onComplete: () => {
+        this.boss.play('boss-idle');
+        this.dialogos();
+      }
+    });
+  }
+
+  // diálogo final: detetive fala, depois o boss responde
+  dialogos() {
+    // garante a escala do retrato do boss (caso o passo 3 seja chamado direto pelo console)
+    const fotoBoss = this.textures.get('boss-thumb').getSourceImage();
+    RETRATO_BOSS.escala = 60 / Math.max(fotoBoss.width, fotoBoss.height);
+
+    mostrarDialogo(this, 'DETECTIVE', 'I came to send you back to hell.', () => {
+      mostrarDialogo(this, 'SUN DEVOURER', 'Do your best, little human...', null, RETRATO_BOSS);
+    });
   }
 }
