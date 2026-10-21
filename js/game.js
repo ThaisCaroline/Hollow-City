@@ -163,6 +163,10 @@ class CenaLuta extends Phaser.Scene {
     this.vilao = this.add.sprite(360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
     this.vilao.setVisible(!comEntrada);
+
+    // cada animação pode vir de um sheet com tamanho de quadro diferente: acerta a origem para os pés ficarem no chão
+    this.vilao.on('animationstart', (anim, frame) => this.ajustarOrigemVilao(frame.textureKey));
+
     this.vilaoAtacando = false;
     this.vilaoEsquivando = false;
     this.vilaoInvulneravel = false;
@@ -173,6 +177,8 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
     this.vilaoAltura = 0;
     this.vilaoVelY = 0;
+    this.vilaoAnimando = false;    // true enquanto toca o dano ou o pouso do pisão (nada interrompe)
+    this.vilaoProximoHit = 0;      // quando o vilão pode mostrar a animação de dano de novo (ms)
     this.golpeAtual = null;
     this.golpeAtualNome = null;
 
@@ -375,7 +381,7 @@ class CenaLuta extends Phaser.Scene {
   // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
-    if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando) return;
+    if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando || this.vilaoAnimando) return;
     if (this.time.now < this.vilaoProximoDesvio) return;
 
     this.vilaoProximoDesvio = this.time.now + d.cooldown;
@@ -536,12 +542,49 @@ class CenaLuta extends Phaser.Scene {
     // flash branco ao levar dano; se o vilão estiver no aviso de um golpe, volta para o laranja
     this.vilao.setTint(0xffffff);
     this.time.delayedCall(80, () => {
-      if (this.vilaoAtacando) this.vilao.setTint(0xffaa44);
+      if (this.vilaoAtacando && !this.fimDeJogo) this.vilao.setTint(0xffaa44);
       else this.vilao.clearTint();
     });
     this.vilao.x += this.vilao.x > this.heroi.x ? 4 : -4;
 
     if (this.vilaoVida <= 0) this.derrotaDoVilao();
+    else this.animarDanoVilao();
+  }
+
+  // acerta a origem vertical do vilão para a textura em uso (sheets novos têm os pés acima da base do quadro)
+  ajustarOrigemVilao(chave) {
+    const origem = (this.cfg.origemY || {})[chave];
+    this.vilao.setOrigin(0.5, origem === undefined ? 1 : origem);
+  }
+
+  // animação de dano do vilão (se a fase tiver): só quando ele está livre e com intervalo entre uma e outra
+  animarDanoVilao() {
+    const nome = this.cfg.anims.hit;
+    if (!nome) return;
+    if (this.vilaoAtacando || this.vilaoEsquivando || this.vilaoNoAr || this.vilaoAnimando) return;
+    if (this.time.now < this.vilaoProximoHit) return;
+    this.vilaoProximoHit = this.time.now + (this.cfg.hitCooldown || 1000);
+
+    this.vilaoAnimando = true;
+    this.vilao.play(nome);
+    this.vilao.once('animationcomplete-' + nome, () => this.fimAnimacaoVilao());
+  }
+
+  // pouso do pisão: quadros de pousar e levantar
+  animarPouso() {
+    const nome = this.cfg.anims.pisaoPouso;
+    if (!nome) return;
+
+    this.vilaoAnimando = true;
+    this.vilao.play(nome);
+    this.vilao.once('animationcomplete-' + nome, () => this.fimAnimacaoVilao());
+  }
+
+  // terminou o dano ou o pouso: o vilão volta ao normal
+  fimAnimacaoVilao() {
+    this.vilaoAnimando = false;
+    if (this.fimDeJogo) return;
+    this.vilaoParado();
   }
 
   derrotaDoVilao() {
@@ -653,8 +696,9 @@ class CenaLuta extends Phaser.Scene {
     this.pulouNoAviso = false;   // começa a contar os pulos deste aviso
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
-    // a animação de ataque (a clava do ogro, por exemplo) toca durante o aviso
+    // a animação de ataque toca durante o aviso: a clava, ou o agachar do pisão
     if (nome === 'clava' && this.cfg.anims.ataque) this.vilao.play(this.cfg.anims.ataque);
+    else if (nome === 'pisao' && this.cfg.anims.pisaoAgachar) this.vilao.play(this.cfg.anims.pisaoAgachar);
 
     // o vilão mira para o lado em que o herói estava quando o aviso começou
     const dir = this.heroi.x < this.vilao.x ? -1 : 1;
@@ -691,6 +735,9 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoNoAr = true;
     this.vilaoAltura = 0;
     this.vilaoVelY = -this.cfg.golpes.alturaPulo;
+
+    // quadros do ar: o último fica segurado até ele pousar
+    if (this.cfg.anims.pisaoAr) this.vilao.play(this.cfg.anims.pisaoAr);
   }
 
   // o vilão pousou: tremor, poeira, dano na área e um avanço em direção ao herói
@@ -706,6 +753,8 @@ class CenaLuta extends Phaser.Scene {
       this.poeiraNoChao();
       return;
     }
+
+    this.animarPouso();
 
     const tremor = this.cfg.golpes.pisao.tremor;
     this.cameras.main.shake(tremor.duracao, tremor.forca);
@@ -753,6 +802,7 @@ class CenaLuta extends Phaser.Scene {
   vilaoParado() {
     this.vilao.stop();
     this.vilao.setTexture(this.cfg.texturas.parado, 0);
+    this.ajustarOrigemVilao(this.cfg.texturas.parado);
   }
 
   // o vilão tenta esquivar quando o herói soca perto dele (só nas fases que têm esquiva)
@@ -967,6 +1017,8 @@ class CenaLuta extends Phaser.Scene {
       // a animação de afundar e surgir cuida de tudo
     } else if (this.vilaoAtacando) {
       // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
+    } else if (this.vilaoAnimando) {
+      // animação de dano ou de pouso em andamento: não trocar de animação nem andar
     } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
       this.vilaoParado();
       this.vilaoAtacar();

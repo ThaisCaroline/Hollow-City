@@ -48,17 +48,6 @@ function setaLateral(cena, x, y, direcao) {
   g.fillTriangle(x - 5 * d, y - 7, x - 5 * d, y + 7, x + 6 * d, y);
 }
 
-// pistola em pixels, centrada em (cx, cy)
-function desenharArma(cena, cx, cy) {
-  const g = cena.add.graphics().setDepth(11);
-  const x0 = cx - 8;
-  const y0 = cy - 6;
-  g.fillStyle(0xffffff, 0.85);
-  g.fillRect(x0, y0, 16, 4);       // cano
-  g.fillRect(x0, y0 + 4, 9, 3);    // corpo
-  g.fillRect(x0, y0 + 7, 4, 5);    // cabo
-}
-
 // desenha o fundo redondo do botão e devolve a área de toque
 function desenharBotao(cena, pos, cor) {
   const g = cena.add.graphics().setDepth(10);

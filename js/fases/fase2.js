@@ -22,6 +22,17 @@ const FASE2 = {
   margemCorpo: 50,            // o ogro é grande: o herói fica mais longe do centro dele
   alturaPassagem: 50,         // acima dessa altura no ar, o herói pode pular por cima do ogro
 
+  // origem vertical (0 a 1) por textura. Os sheets novos têm frames 144x128 com os pés em y=104;
+  // os antigos (144x80) não aparecem aqui e usam 1, a base do quadro
+  origemY: {
+    'ogro-hit': 104 / 128,
+    'ogro-morte': 95 / 128,
+    'ogro-pisao': 104 / 128
+  },
+
+  // animação de dano: intervalo mínimo entre duas (evita o ogro ficar travado apanhando)
+  hitCooldown: 1000,          // ms
+
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
     dano: 'ogro-dano',        // grunhido do ogro quando o herói acerta
@@ -53,13 +64,6 @@ const FASE2 = {
     alturaPulo: 240           // impulso do pulo do ogro (a bruxa e o herói usam 480)
   },
 
-  // morte sem animação: o ogro tomba para o lado e fica no chão antes da fala de derrota
-  morte: {
-    tombar: true,
-    duracao: 500,             // tempo da queda, em ms
-    pausa: 900                // tempo caído antes da fala de derrota, em ms
-  },
-
   // golpes do herói desbloqueados nesta fase
   agachar: true,              // seta para baixo / botão azul: desvia da clava
   tiro: {
@@ -84,27 +88,39 @@ const FASE2 = {
   // imagem que aparece na caixa de diálogo
   retrato: { chave: 'ogro-parado', frame: 0, escala: 0.4 },
 
-  // arquivos dos sprites do ogro
+  // arquivos dos sprites do ogro (pasta assets/ogro)
   sprites: {
-    andar: 'assets/ogro-andar.png',
-    ataque: 'assets/ogro-ataque.png',
-    parado: 'assets/ogro-parado.png',
+    andar: 'assets/ogro/ogro-andar.png',
+    ataque: 'assets/ogro/ogro-ataque.png',
+    parado: 'assets/ogro/ogro-parado.png',
+    hit: 'assets/ogro/ogro_hit.png',
+    morte: 'assets/ogro/ogro_morte.png',
+    pisao: 'assets/ogro/ogro_pisao.png',
     largura: 144,
-    altura: 80
+    altura: 80,               // andar, ataque e parado
+    alturaNovos: 128          // hit, morte e pisão
   },
 
   // nomes internos das texturas
   texturas: {
     andar: 'ogro-andar',
     ataque: 'ogro-ataque',
-    parado: 'ogro-parado'
+    parado: 'ogro-parado',
+    hit: 'ogro-hit',
+    morte: 'ogro-morte',
+    pisao: 'ogro-pisao'
   },
 
-  // nomes internos das animações. Sem morte: o ogro tomba (ver morte.tombar acima)
+  // nomes internos das animações. O pisão tem 3 partes: agachar (aviso), ar (pulo) e pouso
   anims: {
     andar: 'ogro-andar',
     ataque: 'ogro-ataque',
-    parado: 'ogro-parado'
+    parado: 'ogro-parado',
+    hit: 'ogro-hit',
+    morte: 'ogro-morte',
+    pisaoAgachar: 'ogro-pisao-agachar',
+    pisaoAr: 'ogro-pisao-ar',
+    pisaoPouso: 'ogro-pisao-pouso'
   },
 
   // carrega os sprites do ogro (chamado pelo preload da cena de luta)
@@ -120,6 +136,18 @@ const FASE2 = {
     cena.load.spritesheet(this.texturas.parado, this.sprites.parado, {
       frameWidth: this.sprites.largura,
       frameHeight: this.sprites.altura
+    });
+    cena.load.spritesheet(this.texturas.hit, this.sprites.hit, {
+      frameWidth: this.sprites.largura,
+      frameHeight: this.sprites.alturaNovos
+    });
+    cena.load.spritesheet(this.texturas.morte, this.sprites.morte, {
+      frameWidth: this.sprites.largura,
+      frameHeight: this.sprites.alturaNovos
+    });
+    cena.load.spritesheet(this.texturas.pisao, this.sprites.pisao, {
+      frameWidth: this.sprites.largura,
+      frameHeight: this.sprites.alturaNovos
     });
   },
 
@@ -150,6 +178,46 @@ const FASE2 = {
       frames: cena.anims.generateFrameNumbers(T.parado, { start: 0, end: 3 }),
       frameRate: 4,
       repeat: -1
+    });
+
+    // dano: 9 quadros, toca uma vez
+    cena.anims.create({
+      key: A.hit,
+      frames: cena.anims.generateFrameNumbers(T.hit, { start: 0, end: 8 }),
+      frameRate: 16,
+      repeat: 0
+    });
+
+    // morte: 7 quadros, sem loop (o último fica parado no chão)
+    cena.anims.create({
+      key: A.morte,
+      frames: cena.anims.generateFrameNumbers(T.morte, { start: 0, end: 6 }),
+      frameRate: 9,
+      repeat: 0
+    });
+
+    // pisão, parte 1: agachar (quadros 0 a 2) durante o aviso de 500 ms
+    cena.anims.create({
+      key: A.pisaoAgachar,
+      frames: cena.anims.generateFrameNumbers(T.pisao, { start: 0, end: 2 }),
+      frameRate: 6,
+      repeat: 0
+    });
+
+    // pisão, parte 2: no ar, pernas recolhidas (quadros 3 a 5); o último quadro segura até pousar
+    cena.anims.create({
+      key: A.pisaoAr,
+      frames: cena.anims.generateFrameNumbers(T.pisao, { start: 3, end: 5 }),
+      frameRate: 9,
+      repeat: 0
+    });
+
+    // pisão, parte 3: pouso e levantar (quadros 6 a 8)
+    cena.anims.create({
+      key: A.pisaoPouso,
+      frames: cena.anims.generateFrameNumbers(T.pisao, { start: 6, end: 8 }),
+      frameRate: 8,
+      repeat: 0
     });
   }
 };
