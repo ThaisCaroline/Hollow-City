@@ -101,7 +101,8 @@ class RankingFase extends Phaser.Scene {
     const proximaLuta = this.fase + 1;
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      if (proximaLuta >= LUTAS.length) this.scene.start('Final');
+      if (this.fase === 2) this.scene.start('CutsceneBoss');
+      else if (proximaLuta >= LUTAS.length) this.scene.start('Final');
       else this.scene.start('Mapa', { fase: this.game.progresso });
     });
   }

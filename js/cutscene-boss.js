@@ -1,7 +1,8 @@
 // Cutscene antes do boss final.
 // Passo 1: o detetive entra andando no cenário vazio (sem monstros) e para.
 // Passo 2: corta para o slide 1 (boss no trono) e o slide 2 (goblin ajoelhado + fala do boss).
-// Passo 3 (em andamento): volta ao jogo com o cenário cheio; o boss chega andando e para; diálogos detetive/boss.
+// Passo 3: volta ao jogo com o cenário cheio; o boss chega andando e para; diálogos detetive/boss.
+// Depois das falas: fade e vai para a luta (por enquanto a luta 4, do ogro).
 
 const CUTSCENE_CENARIO_ESCALA = 512 / 1376;   // largura da imagem -> largura da tela
 const CUTSCENE_CENARIO_Y = -42;               // sobe o fundo para a faixa de terra encostar nos pés (CHAO_Y)
@@ -11,6 +12,8 @@ const CUTSCENE_ANTES_DE_PARAR = 2500;         // ms: o corte para o slide 1 acon
 const CUTSCENE_SLIDE1_TEMPO = 2500;           // ms: quanto o boss no trono fica na tela
 const CUTSCENE_FADE_ENTRE_SLIDES = 1000;      // ms: escurecer (e depois clarear) entre o slide 1 e o 2
 const CUTSCENE_ESPERA_DIALOGO = 2500;         // ms: o goblin fica na tela antes da fala do boss
+
+const CUTSCENE_LUTA_SEGUINTE = 3;             // índice da luta que vem depois da cutscene (3 = luta 4, o ogro)
 
 // retrato do boss na caixa de diálogo (imagem única, sem frames; a escala é calculada na hora da fala)
 const RETRATO_BOSS = { chave: 'boss-thumb', frame: '__BASE', escala: 1 };
@@ -53,6 +56,7 @@ class CutsceneBoss extends Phaser.Scene {
 
   create() {
     this.slide = null;
+    this.saindo = false;
 
     this.add.image(0, CUTSCENE_CENARIO_Y, 'cenario-boss-vazio')
       .setOrigin(0, 0)
@@ -149,7 +153,8 @@ class CutsceneBoss extends Phaser.Scene {
     );
   }
 
-  // slide 2: o goblin ajoelhado, sem fala; depois de um tempo o boss responde
+  // slide 2: o goblin ajoelhado, sem fala; depois de um tempo o boss responde.
+  // Quando a fala termina, corta para o passo 3 sozinho.
   slide2() {
     this.corte(
       () => this.mostrarSlide('cena2'),
@@ -162,7 +167,7 @@ class CutsceneBoss extends Phaser.Scene {
           this,
           'SUN DEVOURER',
           'Hmm... if you want something done right, you have to do it yourself...',
-          null,
+          () => this.corte(() => this.passo3()),
           RETRATO_BOSS
         );
       }),
@@ -201,14 +206,31 @@ class CutsceneBoss extends Phaser.Scene {
     });
   }
 
-  // diálogo final: detetive fala, depois o boss responde
+  // diálogo final: detetive fala, depois o boss responde; no fim vai para a luta
   dialogos() {
     // garante a escala do retrato do boss (caso o passo 3 seja chamado direto pelo console)
     const fotoBoss = this.textures.get('boss-thumb').getSourceImage();
     RETRATO_BOSS.escala = 60 / Math.max(fotoBoss.width, fotoBoss.height);
 
     mostrarDialogo(this, 'DETECTIVE', 'I came to send you back to hell.', () => {
-      mostrarDialogo(this, 'SUN DEVOURER', 'Do your best, little human...', null, RETRATO_BOSS);
+      mostrarDialogo(
+        this,
+        'SUN DEVOURER',
+        'Do your best, little human...',
+        () => this.irParaLuta(),
+        RETRATO_BOSS
+      );
     }, RETRATO_DETETIVE);
+  }
+
+  // fade para preto e começa a luta seguinte
+  irParaLuta() {
+    if (this.saindo) return;
+    this.saindo = true;
+
+    this.cameras.main.fadeOut(400, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('CenaLuta', { fase: CUTSCENE_LUTA_SEGUINTE });
+    });
   }
 }
