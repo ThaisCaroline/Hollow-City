@@ -69,6 +69,9 @@ class CenaLuta extends Phaser.Scene {
   }
 
   create() {
+    // reinício da cena: o relógio da cena guarda o valor da última vez que rodou, então sincroniza com o tempo do jogo
+    this.time.now = this.game.loop.time;
+
     // o cenário fica fixo na tela; ele só rola durante a caminhada da entrada
     this.fundo = this.add.tileSprite(0, 0, 512, 224, this.cfg.cenarioChave).setOrigin(0, 0);
     this.fundo.y = this.cfg.cenarioAjusteY || 0;   // ajuste de altura do cenário, aplicado em toda tentativa
