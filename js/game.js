@@ -64,6 +64,10 @@ class CenaLuta extends Phaser.Scene {
       frameWidth: 48,
       frameHeight: 48
     });
+    this.load.spritesheet('heroi-hit', 'assets/heroi/heroi_hit.png', {
+      frameWidth: 48,
+      frameHeight: 48
+    });
     this.load.image('icone-soco', 'assets/icones/icone_soco.png');
     this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
   }
@@ -124,6 +128,13 @@ class CenaLuta extends Phaser.Scene {
         key: 'heroi-agachar',
         frames: this.anims.generateFrameNumbers('heroi-agachar', { start: 0, end: 4 }),
         frameRate: 14,
+        repeat: 0
+      });
+
+      this.anims.create({
+        key: 'heroi-hit',
+        frames: this.anims.generateFrameNumbers('heroi-hit', { start: 0, end: 5 }),
+        frameRate: 16,
         repeat: 0
       });
     }
@@ -430,9 +441,26 @@ class CenaLuta extends Phaser.Scene {
 
     if (this.heroiVida <= 0) {
       this.derrotaDoHeroi();
-    } else if (!this.emVirada && this.heroiVida <= LIMITE_VIRADA) {
+      return;
+    }
+
+    this.animarDanoHeroi();
+
+    if (!this.emVirada && this.heroiVida <= LIMITE_VIRADA) {
       this.ativarVirada();
     }
+  }
+
+  // animação de dano: interrompe o ataque e segura o herói por um instante
+  animarDanoHeroi() {
+    this.heroiAgachado = false;   // senão o levantar() pararia a animação
+    this.heroiAtacando = true;    // trava andar/agachar enquanto a animação toca
+    this.heroi.play('heroi-hit');
+    this.heroi.once('animationcomplete', () => {
+      if (this.heroiMorrendo) return;
+      this.heroiAtacando = false;
+      this.heroi.setTexture('heroi-andar', 0);
+    });
   }
 
   // entra no modo virada uma única vez: soco mais forte e barra piscando
