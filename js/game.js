@@ -1,6 +1,6 @@
 // A cena de luta: herói, vilão e o loop principal.
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
-// O herói fica em luta/heroi.js; os golpes do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
+// O herói fica em luta/heroi.js; os itens que o herói pega (poção, soco inglês) em luta/pocao-heroi.js; os golpes, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
 // Cada fase (fases/fase1.js, fases/fase2.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
 // ordem das lutas no caminho: criatura, ogro, criatura, ogro
@@ -27,37 +27,9 @@ class CenaLuta extends Phaser.Scene {
     this.load.image(this.cfg.cenarioChave, this.cfg.cenario);
     this.cfg.carregar(this);
 
-    // herói (frames 48x48)
-    this.load.spritesheet('heroi-andar', 'assets/heroi/heroi_walk.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-soco', 'assets/heroi/heroi_soco.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-chute', 'assets/heroi/heroi_chute.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-morte', 'assets/heroi/heroi_morte.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-tiro', 'assets/heroi/heroi_tiro.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-agachar', 'assets/heroi/heroi_crouch.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.spritesheet('heroi-hit', 'assets/heroi/heroi_hit.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
-    this.load.image('icone-soco', 'assets/icones/icone_soco.png');
-    this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
+    // herói: sheets e ícones (luta/heroi.js)
+    this.carregarHeroi();
+    this.carregarItensHeroi();
   }
 
   create() {
@@ -75,57 +47,8 @@ class CenaLuta extends Phaser.Scene {
     // cores e animações do vilão ficam na configuração da fase
     this.cfg.preparar(this);
 
-    // animações do herói (o herói é o mesmo em todas as fases)
-    if (!this.anims.exists('heroi-andar')) {
-      this.anims.create({
-        key: 'heroi-andar',
-        frames: this.anims.generateFrameNumbers('heroi-andar', { start: 0, end: 7 }),
-        frameRate: 8,
-        repeat: -1
-      });
-
-      this.anims.create({
-        key: 'heroi-soco',
-        frames: this.anims.generateFrameNumbers('heroi-soco', { start: 0, end: 5 }),
-        frameRate: 18,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'heroi-chute',
-        frames: this.anims.generateFrameNumbers('heroi-chute', { start: 0, end: 6 }),
-        frameRate: 16,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'heroi-morte',
-        frames: this.anims.generateFrameNumbers('heroi-morte', { start: 0, end: 6 }),
-        frameRate: 9,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'heroi-tiro',
-        frames: this.anims.generateFrameNumbers('heroi-tiro', { start: 0, end: 8 }),
-        frameRate: TIRO_FPS,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'heroi-agachar',
-        frames: this.anims.generateFrameNumbers('heroi-agachar', { start: 0, end: 4 }),
-        frameRate: 14,
-        repeat: 0
-      });
-
-      this.anims.create({
-        key: 'heroi-hit',
-        frames: this.anims.generateFrameNumbers('heroi-hit', { start: 0, end: 5 }),
-        frameRate: 16,
-        repeat: 0
-      });
-    }
+    // animações do herói (luta/heroi.js)
+    this.criarAnimacoesHeroi();
 
     // a entrada do herói e os diálogos acontecem na primeira vez que cada fase é jogada
     const jaVista = (this.game.fasesVistas || {})[this.fase];
@@ -161,6 +84,8 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoInvulneravel = false;
     this.vilaoProximoAtaque = 0;
     this.vilaoProximaEsquiva = 0;
+    this.vilaoBloqueando = false;  // true enquanto o ogro está de braços cruzados (soco e chute não causam dano)
+    this.vilaoProximoBloqueio = 0; // quando o ogro pode bloquear de novo (ms)
     this.vilaoNoAr = false;        // true enquanto o vilão pula (pisão do ogro)
     this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
     this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
@@ -283,6 +208,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilao.setVisible(true);
     this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
     this.vilaoProximaEsquiva = this.time.now + this.cfg.primeiraEsquiva;
+    if (this.cfg.bloqueio) this.vilaoProximoBloqueio = this.time.now + this.cfg.bloqueio.primeiro;
 
     criarBarrasDeVida(this);
 
@@ -349,12 +275,19 @@ class CenaLuta extends Phaser.Scene {
       // a animação de afundar e surgir cuida de tudo
     } else if (this.vilaoBebendo) {
       // bebendo a poção: parado e vulnerável até a animação acabar ou ser interrompida
+    } else if (this.vilaoBloqueando) {
+      // de braços cruzados: parado até o fim do bloqueio; o pisão vem logo depois
     } else if (this.vilaoAtacando) {
       // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
     } else if (this.vilaoAnimando) {
       // animação de dano ou de pouso em andamento: não trocar de animação nem andar
+    } else if (this.vilaoDesviando) {
+      // pulando para desviar de tiro: a animação do pulo cuida de tudo até ele pousar
     } else if (this.podeBeberPocao()) {
       this.vilaoBeber();
+    } else if (this.podeBloquear()) {
+      this.vilaoParado();
+      this.vilaoBloquear();
     } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
       this.vilaoParado();
       this.vilaoAtacar();
@@ -406,7 +339,7 @@ function misturarNaCena(...origens) {
   }
 }
 
-misturarNaCena(LutaHeroi, LutaVilaoGolpes, LutaVilaoDano);
+misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano);
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,

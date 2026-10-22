@@ -93,9 +93,10 @@ function criarControlesDeToque(cena) {
     desenharIcone(cena, SETA_BAIXO, BOTAO.baixo.x, BOTAO.baixo.y, 2);
   }
 
-  // soco: ataque padrão, sempre o maior
+  // soco: ataque padrão, sempre o maior; com o soco inglês (luta 3 em diante) o ícone vira a mão com o soco inglês
   botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');
-  cena.add.image(BOTAO.soco.x, BOTAO.soco.y, 'icone-soco').setDepth(11).setAlpha(0.9);
+  const iconeSoco = cena.temSocoIngles && cena.temSocoIngles() ? 'icone-soco-ingles' : 'icone-soco';
+  cena.add.image(BOTAO.soco.x, BOTAO.soco.y, iconeSoco).setDepth(11).setAlpha(0.9);
   // tiro: ataque especial, menor, só na luta 2
   if (cena.cfg.tiro) {
     botaoToque(cena, BOTAO.tiro, 0xffd23f, 'tiro');

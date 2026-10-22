@@ -14,7 +14,58 @@ const QUADRO_ACERTO_CHUTE_FIM = 4;
 const TIRO_FPS = 18;
 const TIRO_QUADRO_DISPARO = 3;
 
+// soco inglês: o ogro deixa cair na luta 2 e vale a partir da luta 3 (sem anotar nada, só pelo número da luta)
+const SOCO_INGLES_LUTA = 2;           // índice da primeira luta com o soco inglês (2 = a luta 3)
+const DANO_SOCO_INGLES = 20;          // dano do soco com o soco inglês
+const DANO_SOCO_INGLES_VIRADA = 30;   // dano do soco com o soco inglês no modo virada
+const DANO_CHUTE_INGLES = 30;         // dano do chute (3º golpe do combo) com o soco inglês
+
 class LutaHeroi {
+  // o herói já está com o soco inglês nesta luta?
+  temSocoIngles() {
+    return this.fase >= SOCO_INGLES_LUTA;
+  }
+
+  // carrega os sheets (frames 48x48) e os ícones do herói; chamado pelo preload da cena de luta
+  carregarHeroi() {
+    const tamanho = { frameWidth: 48, frameHeight: 48 };
+
+    this.load.spritesheet('heroi-andar', 'assets/heroi/heroi_walk.png', tamanho);
+    this.load.spritesheet('heroi-soco', 'assets/heroi/heroi_soco.png', tamanho);
+    this.load.spritesheet('heroi-chute', 'assets/heroi/heroi_chute.png', tamanho);
+    this.load.spritesheet('heroi-morte', 'assets/heroi/heroi_morte.png', tamanho);
+    this.load.spritesheet('heroi-tiro', 'assets/heroi/heroi_tiro.png', tamanho);
+    this.load.spritesheet('heroi-agachar', 'assets/heroi/heroi_crouch.png', tamanho);
+    this.load.spritesheet('heroi-hit', 'assets/heroi/heroi_hit.png', tamanho);
+    this.load.spritesheet('heroi-pegar', 'assets/heroi/heroi_pegar_pocao.png', tamanho);
+    this.load.spritesheet('heroi-pegar-soco', 'assets/heroi/heroi_pegar_soco_ingles.png', tamanho);
+    this.load.image('icone-soco', 'assets/icones/icone_soco.png');
+    this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
+    this.load.image('icone-soco-ingles', 'assets/icones/icone_soco_ingles.png');
+  }
+
+  // cria as animações do herói (o herói é o mesmo em todas as fases); chamado pelo create da cena de luta
+  criarAnimacoesHeroi() {
+    if (this.anims.exists('heroi-andar')) return;
+
+    const criar = (chave, fim, fps, repeticoes) => this.anims.create({
+      key: chave,
+      frames: this.anims.generateFrameNumbers(chave, { start: 0, end: fim }),
+      frameRate: fps,
+      repeat: repeticoes
+    });
+
+    criar('heroi-andar', 7, 8, -1);
+    criar('heroi-soco', 5, 18, 0);
+    criar('heroi-chute', 6, 16, 0);
+    criar('heroi-morte', 6, 9, 0);
+    criar('heroi-tiro', 8, TIRO_FPS, 0);
+    criar('heroi-agachar', 4, 14, 0);
+    criar('heroi-hit', 5, 16, 0);
+    criar('heroi-pegar', 8, 9, 0);        // pegar a poção: 9 quadros a 9 fps = 1 s
+    criar('heroi-pegar-soco', 8, 9, 0);   // pegar o soco inglês: igual
+  }
+
   // soco; o 3º ataque seguido (dentro da janela do combo) vira chute
   socar() {
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
@@ -309,8 +360,12 @@ class LutaHeroi {
         if (this.vilaoInvulneravel) {
           tocarSom(this, 'miss');
           flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'MISS');
+        } else if (this.vilaoBloqueando) {
+          // o ogro está de braços cruzados: soco e chute não causam dano
+          tocarSom(this, 'miss');
+          flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'BLOCKED');
         } else if (emChute) {
-          this.danoNoVilao(DANO_CHUTE, this.cfg.sons.dano);
+          this.danoNoVilao(this.temSocoIngles() ? DANO_CHUTE_INGLES : DANO_CHUTE, this.cfg.sons.dano);
         } else {
           this.causarDano();
         }

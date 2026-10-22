@@ -27,7 +27,8 @@ const FASE2 = {
   origemY: {
     'ogro-hit': 104 / 128,
     'ogro-morte': 95 / 128,
-    'ogro-pisao': 104 / 128
+    'ogro-pisao': 104 / 128,
+    'ogro-bloqueio': 104 / 128
   },
 
   // animação de dano: intervalo mínimo entre duas (evita o ogro ficar travado apanhando)
@@ -78,6 +79,16 @@ const FASE2 = {
   // o ogro não esquiva
   esquiva: false,
 
+  // bloqueio: por conta própria, com o herói perto (dentro de distanciaAtaque), o ogro cruza os braços com a clava no peito.
+  // Soco e chute não causam dano (aparece BLOCKED); o tiro passa e causa dano normal.
+  // Logo depois do bloqueio ele faz o pisão, mais forte que o normal
+  bloqueio: {
+    primeiro: 4000,     // ms: o primeiro bloqueio só fica disponível depois disso, contado do começo da luta
+    intervalo: 8000,    // ms entre um bloqueio e o seguinte, contados do começo do bloqueio
+    duracao: 1500,      // ms de braços cruzados, antes do pisão
+    pisaoDano: 40       // dano do pisão logo depois do bloqueio (o pisão normal tira 25)
+  },
+
   // desvio de tiro: o ogro tenta pular quando uma bala aparece
   desvioTiro: {
     alturaPulo: 380,   // impulso do pulo de desvio (alto o bastante para a bala passar por baixo)
@@ -96,9 +107,10 @@ const FASE2 = {
     hit: 'assets/ogro/ogro_hit.png',
     morte: 'assets/ogro/ogro_morte.png',
     pisao: 'assets/ogro/ogro_pisao.png',
+    bloqueio: 'assets/ogro/ogro_bloqueio.png',
     largura: 144,
     altura: 80,               // andar, ataque e parado
-    alturaNovos: 128          // hit, morte e pisão
+    alturaNovos: 128          // hit, morte, pisão e bloqueio
   },
 
   // nomes internos das texturas
@@ -108,7 +120,8 @@ const FASE2 = {
     parado: 'ogro-parado',
     hit: 'ogro-hit',
     morte: 'ogro-morte',
-    pisao: 'ogro-pisao'
+    pisao: 'ogro-pisao',
+    bloqueio: 'ogro-bloqueio'
   },
 
   // nomes internos das animações. O pisão tem 3 partes: agachar (aviso), ar (pulo) e pouso
@@ -120,7 +133,8 @@ const FASE2 = {
     morte: 'ogro-morte',
     pisaoAgachar: 'ogro-pisao-agachar',
     pisaoAr: 'ogro-pisao-ar',
-    pisaoPouso: 'ogro-pisao-pouso'
+    pisaoPouso: 'ogro-pisao-pouso',
+    bloqueio: 'ogro-bloqueio'
   },
 
   // carrega os sprites do ogro (chamado pelo preload da cena de luta)
@@ -146,6 +160,10 @@ const FASE2 = {
       frameHeight: this.sprites.alturaNovos
     });
     cena.load.spritesheet(this.texturas.pisao, this.sprites.pisao, {
+      frameWidth: this.sprites.largura,
+      frameHeight: this.sprites.alturaNovos
+    });
+    cena.load.spritesheet(this.texturas.bloqueio, this.sprites.bloqueio, {
       frameWidth: this.sprites.largura,
       frameHeight: this.sprites.alturaNovos
     });
@@ -217,6 +235,14 @@ const FASE2 = {
       key: A.pisaoPouso,
       frames: cena.anims.generateFrameNumbers(T.pisao, { start: 6, end: 8 }),
       frameRate: 8,
+      repeat: 0
+    });
+
+    // bloqueio: 9 quadros (subir a clava e cruzar os braços); o último fica segurado até o fim do bloqueio
+    cena.anims.create({
+      key: A.bloqueio,
+      frames: cena.anims.generateFrameNumbers(T.bloqueio, { start: 0, end: 8 }),
+      frameRate: 10,
       repeat: 0
     });
   }

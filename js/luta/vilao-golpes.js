@@ -1,11 +1,11 @@
-// Luta: os golpes do vilão (clava, pisão), o desvio de tiro, a esquiva e o movimento.
+// Luta: os golpes do vilão (clava, pisão), o desvio de tiro, o bloqueio, a esquiva e o movimento.
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
 class LutaVilaoGolpes {
   // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
-    if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando || this.vilaoAnimando) return;
+    if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando || this.vilaoAnimando || this.vilaoBloqueando) return;
     if (this.time.now < this.vilaoProximoDesvio) return;
 
     this.vilaoProximoDesvio = this.time.now + d.cooldown;
@@ -15,6 +15,9 @@ class LutaVilaoGolpes {
     this.vilaoNoAr = true;
     this.vilaoAltura = 0;
     this.vilaoVelY = -d.alturaPulo;
+
+    // quadros do ar (pernas recolhidas), os mesmos do pisão; o último fica segurado até ele pousar
+    if (this.cfg.anims.pisaoAr) this.vilao.play(this.cfg.anims.pisaoAr);
   }
 
   // os golpes vêm inteiros da fase (dano, alcance, aviso e de que forma o herói desvia)
@@ -44,9 +47,10 @@ class LutaVilaoGolpes {
     });
   }
 
-  vilaoAtacar() {
-    const nome = this.escolherGolpe();
-    const g = this.golpe(nome);
+  // forcado (opcional): { nome, golpe } para um golpe escolhido de fora, como o pisão logo depois do bloqueio
+  vilaoAtacar(forcado = null) {
+    const nome = forcado ? forcado.nome : this.escolherGolpe();
+    const g = forcado ? forcado.golpe : this.golpe(nome);
     this.golpeAtual = g;
     this.golpeAtualNome = nome;
 
@@ -153,6 +157,29 @@ class LutaVilaoGolpes {
   // vira o vilão para o lado certo; cada fase diz se o sprite nasce espelhado
   virarVilao(olhaParaEsquerda) {
     this.vilao.setFlipX(olhaParaEsquerda !== !!this.cfg.espelhado);
+  }
+
+  // a fase tem bloqueio, o herói está perto e no chão, e já passou o tempo desde o último bloqueio
+  podeBloquear() {
+    const b = this.cfg.bloqueio;
+    if (!b || !this.emCombate || this.heroiNoAr) return false;
+    const perto = Math.abs(this.vilao.x - this.heroi.x) <= this.cfg.distanciaAtaque;
+    return perto && this.time.now >= this.vilaoProximoBloqueio;
+  }
+
+  // bloqueio: braços cruzados por um tempo (soco e chute não causam dano, o tiro passa) e, logo depois, o pisão mais forte
+  vilaoBloquear() {
+    const b = this.cfg.bloqueio;
+    this.vilaoBloqueando = true;
+    this.vilaoProximoBloqueio = this.time.now + b.intervalo;
+    this.vilao.clearTint();
+    this.vilao.play(this.cfg.anims.bloqueio);
+
+    this.time.delayedCall(b.duracao, () => {
+      if (this.fimDeJogo) return;
+      this.vilaoBloqueando = false;
+      this.vilaoAtacar({ nome: 'pisao', golpe: { ...this.cfg.golpes.pisao, dano: b.pisaoDano } });
+    });
   }
 
   // vilão parado em pé: sempre o quadro 0 da textura de parado.

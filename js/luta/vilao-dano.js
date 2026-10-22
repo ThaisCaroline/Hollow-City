@@ -8,8 +8,11 @@ const CURA_PISCADAS = 8;              // mudanças de cor no brilho (~1 s)
 
 class LutaVilaoDano {
   causarDano() {
-    // no modo virada, o soco tira mais vida do vilão
-    const dano = this.emVirada ? DANO_SOCO_VIRADA : DANO_SOCO;
+    // no modo virada, o soco tira mais vida do vilão; o soco inglês aumenta os dois (valores em luta/heroi.js)
+    const ingles = this.temSocoIngles();
+    const normal = ingles ? DANO_SOCO_INGLES : DANO_SOCO;
+    const virada = ingles ? DANO_SOCO_INGLES_VIRADA : DANO_SOCO_VIRADA;
+    const dano = this.emVirada ? virada : normal;
     this.danoNoVilao(dano, this.cfg.sons.dano);
   }
 
@@ -47,7 +50,7 @@ class LutaVilaoDano {
   animarDanoVilao() {
     const nome = this.cfg.anims.hit;
     if (!nome) return;
-    if (this.vilaoAtacando || this.vilaoEsquivando || this.vilaoNoAr || this.vilaoAnimando || this.vilaoBebendo) return;
+    if (this.vilaoAtacando || this.vilaoEsquivando || this.vilaoNoAr || this.vilaoAnimando || this.vilaoBebendo || this.vilaoBloqueando) return;
     if (this.time.now < this.vilaoProximoHit) return;
     this.vilaoProximoHit = this.time.now + (this.cfg.hitCooldown || 1000);
 
@@ -178,6 +181,7 @@ class LutaVilaoDano {
   derrotaDoVilao() {
     this.fimDeJogo = true;
     this.vilaoBebendo = false;
+    this.vilaoBloqueando = false;
     this.curaBrilho = false;
     this.curaPiscaOn = false;
 
@@ -203,7 +207,7 @@ class LutaVilaoDano {
     cam.zoomTo(1.5, 500);
     cam.pan(Phaser.Math.Clamp(this.vilao.x, 171, 341), 148, 500);
 
-    // mostra o K.O. e, se a fase tiver fala de derrota, o vilão fala antes
+    // mostra o K.O. (som e texto) e vai para o ranking
     const mostrarKO = () => {
       tocarSom(this, 'ko');
       this.add.text(256, 90, 'K.O.!!!!', {
@@ -215,9 +219,20 @@ class LutaVilaoDano {
         strokeThickness: 6
       }).setOrigin(0.5).setDepth(30);
 
-      this.time.delayedCall(2000, () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta }));
+      const irParaRanking = () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta });
+
+      // nas lutas que deixam um item (poção, soco inglês) o ranking só entra quando o jogador toca; nas outras, 2 s depois
+      if (this.deveDroparItem()) this.esperarToque(irParaRanking);
+      else this.time.delayedCall(2000, irParaRanking);
     };
 
+    // antes do K.O.: algumas lutas deixam um item (poção, soco inglês) e o herói o pega (luta/pocao-heroi.js)
+    const antesDoKO = () => {
+      if (this.deveDroparItem()) this.cenaItem(mostrarKO);
+      else mostrarKO();
+    };
+
+    // se a fase tiver fala de derrota, o vilão fala antes
     const depoisDaQueda = () => {
       this.anims.globalTimeScale = 1;
       cam.zoomTo(1, 400);
@@ -225,9 +240,9 @@ class LutaVilaoDano {
 
       this.time.delayedCall(450, () => {
         if (this.cfg.dialogoDerrota) {
-          mostrarDialogo(this, this.cfg.nome, this.cfg.dialogoDerrota, mostrarKO, this.cfg.retrato);
+          mostrarDialogo(this, this.cfg.nome, this.cfg.dialogoDerrota, antesDoKO, this.cfg.retrato);
         } else {
-          mostrarKO();
+          antesDoKO();
         }
       });
     };
