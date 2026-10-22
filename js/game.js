@@ -2,7 +2,7 @@
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
 // Cada fase (fases/fase1.js, fases/fase2.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
-// ordem das lutas no caminho: bruxa, ogro, bruxa, ogro
+// ordem das lutas no caminho: criatura, ogro, criatura, ogro
 const FASES = [FASE1, FASE2, FASE1, FASE2];
 
 // herói novo: frames de 48x48 com os pés em y=39
@@ -20,6 +20,11 @@ const QUADRO_ACERTO_CHUTE_FIM = 4;
 // tiro: a bala sai quando o braço está levantado
 const TIRO_FPS = 18;
 const TIRO_QUADRO_DISPARO = 3;
+
+// brilho verde da poção (só quando ela termina de beber)
+const COR_BRILHO_CURA = 0x4cff6a;
+const CURA_PISCA_MS = 120;            // tempo de cada piscada
+const CURA_PISCADAS = 8;              // mudanças de cor no brilho (~1 s)
 
 class CenaLuta extends Phaser.Scene {
   constructor() {
@@ -166,6 +171,7 @@ class CenaLuta extends Phaser.Scene {
 
     // cada animação pode vir de um sheet com tamanho de quadro diferente: acerta a origem para os pés ficarem no chão
     this.vilao.on('animationstart', (anim, frame) => this.ajustarOrigemVilao(frame.textureKey));
+    this.ajustarOrigemVilao(this.cfg.texturas.parado);
 
     this.vilaoAtacando = false;
     this.vilaoEsquivando = false;
@@ -179,6 +185,12 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoVelY = 0;
     this.vilaoAnimando = false;    // true enquanto toca o dano ou o pouso do pisão (nada interrompe)
     this.vilaoProximoHit = 0;      // quando o vilão pode mostrar a animação de dano de novo (ms)
+    this.vilaoBebendo = false;     // true enquanto ele bebe a poção de cura
+    this.vilaoPocaoUsada = false;  // a poção só é bebida uma vez por luta (mesmo se for interrompida)
+    this.vilaoGolpesNaPocao = 0;   // golpes recebidos enquanto bebe
+    this.curaBrilho = false;       // true durante o brilho verde da poção (usado também pela barra de vida)
+    this.curaPiscaOn = false;      // alterna a cor verde durante o brilho
+    this.vilaoVidaAntesCura = 0;   // vida antes da cura, para a barra mostrar o pedaço recuperado
     this.golpeAtual = null;
     this.golpeAtualNome = null;
 
@@ -393,7 +405,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoVelY = -d.alturaPulo;
   }
 
-  // move as balas; acerta o ogro só se ele estiver no chão (o pulo faz a bala passar por baixo)
+  // move as balas; acerta o vilão só se ele estiver no chão (o pulo do ogro faz a bala passar por baixo)
   atualizarTiros(delta) {
     const cfg = this.cfg.tiro;
     if (!cfg) return;
@@ -533,7 +545,7 @@ class CenaLuta extends Phaser.Scene {
 
   // tira vida do vilão e mostra o acerto: vale para soco, chute e tiro
   danoNoVilao(dano, som) {
-    // cada fase define o próprio som de dano (bruxa: soco; ogro: grunhido)
+    // cada fase define o próprio som de dano
     tocarSom(this, som);
 
     this.vilaoVida = Math.max(0, this.vilaoVida - dano);
@@ -547,8 +559,12 @@ class CenaLuta extends Phaser.Scene {
     });
     this.vilao.x += this.vilao.x > this.heroi.x ? 4 : -4;
 
-    if (this.vilaoVida <= 0) this.derrotaDoVilao();
-    else this.animarDanoVilao();
+    if (this.vilaoVida <= 0) {
+      this.derrotaDoVilao();
+    } else {
+      this.contarGolpeNaPocao();
+      this.animarDanoVilao();
+    }
   }
 
   // acerta a origem vertical do vilão para a textura em uso (sheets novos têm os pés acima da base do quadro)
@@ -561,7 +577,7 @@ class CenaLuta extends Phaser.Scene {
   animarDanoVilao() {
     const nome = this.cfg.anims.hit;
     if (!nome) return;
-    if (this.vilaoAtacando || this.vilaoEsquivando || this.vilaoNoAr || this.vilaoAnimando) return;
+    if (this.vilaoAtacando || this.vilaoEsquivando || this.vilaoNoAr || this.vilaoAnimando || this.vilaoBebendo) return;
     if (this.time.now < this.vilaoProximoHit) return;
     this.vilaoProximoHit = this.time.now + (this.cfg.hitCooldown || 1000);
 
@@ -587,14 +603,132 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoParado();
   }
 
+  // ---------- poção de cura ----------
+
+  // a fase tem poção, ela ainda não bebeu e a vida chegou ao gatilho
+  podeBeberPocao() {
+    const p = this.cfg.pocao;
+    return !!p && !this.vilaoPocaoUsada && this.emCombate && this.vilaoVida <= p.gatilho * this.vilaoVidaMax;
+  }
+
+  // bebe a poção: fica parado e vulnerável durante a animação
+  vilaoBeber() {
+    const nome = this.cfg.anims.beber;
+    this.vilaoPocaoUsada = true;
+    this.vilaoBebendo = true;
+    this.vilaoGolpesNaPocao = 0;
+    this.vilao.clearTint();
+    this.vilao.play(nome);
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'POTION!');
+    this.vilao.once('animationcomplete-' + nome, () => this.fimPocao(false));
+  }
+
+  // cada golpe que acerta enquanto ele bebe conta para interromper a poção
+  contarGolpeNaPocao() {
+    if (!this.vilaoBebendo) return;
+    this.vilaoGolpesNaPocao++;
+    if (this.vilaoGolpesNaPocao >= this.cfg.pocao.golpesParaInterromper) this.fimPocao(true);
+  }
+
+  // terminou de beber (ou foi interrompido): se terminou, cura e brilha; se foi interrompido, não cura nada
+  fimPocao(interrompida) {
+    if (!this.vilaoBebendo) return;
+    this.vilaoBebendo = false;
+    this.vilao.off('animationcomplete-' + this.cfg.anims.beber);
+    if (this.fimDeJogo) return;
+
+    const p = this.cfg.pocao;
+    this.vilaoProximoAtaque = this.time.now + p.pausaDepois;
+
+    if (interrompida) {
+      // poção derrubada: a vida não sobe e não tem brilho verde
+      flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'INTERRUPTED!');
+      this.vilaoParado();
+      return;
+    }
+
+    const vidaAntes = this.vilaoVida;
+    const cura = p.cura * this.vilaoVidaMax;
+    this.vilaoVida = Math.min(this.vilaoVidaMax, this.vilaoVida + cura);
+
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'HEALED!');
+    this.brilhoPocao(vidaAntes);   // também redesenha as barras
+
+    this.vilaoParado();
+  }
+
+  // brilho verde da cura: contorno luminoso e piscada verde no sprite, anel no chão e barra de vida piscando
+  brilhoPocao(vidaAntes) {
+    // a barra de vida lê estes valores (hud.js)
+    this.curaBrilho = true;
+    this.curaPiscaOn = false;
+    this.vilaoVidaAntesCura = vidaAntes;
+    desenharBarras(this);
+
+    // contorno luminoso em volta do corpo (só no WebGL; sem ele ficam só as piscadas)
+    let brilho = null;
+    if (this.vilao.postFX) brilho = this.vilao.postFX.addGlow(COR_BRILHO_CURA, 4, 0, false, 0.1, 10);
+
+    // anel verde que se abre no chão e some
+    const anel = this.add.graphics().setDepth(14);
+    anel.lineStyle(2, COR_BRILHO_CURA, 1);
+    anel.strokeEllipse(0, 0, 36, 10);
+    anel.setPosition(this.vilao.x, CHAO_Y - 2);
+    this.tweens.add({
+      targets: anel,
+      scaleX: 2.6,
+      scaleY: 2.6,
+      alpha: 0,
+      duration: 600,
+      onComplete: () => anel.destroy()
+    });
+
+    // piscadas: silhueta verde e cor normal se alternam (o sprite é escuro, então o tingimento comum não apareceria)
+    this.time.addEvent({
+      delay: CURA_PISCA_MS,
+      repeat: CURA_PISCADAS - 1,
+      callback: () => {
+        if (this.fimDeJogo) return;
+        this.curaPiscaOn = !this.curaPiscaOn;
+        if (this.curaPiscaOn) this.vilao.setTintFill(COR_BRILHO_CURA);
+        else this.vilao.clearTint();
+        desenharBarras(this);
+      }
+    });
+
+    // fim do brilho
+    this.time.delayedCall((CURA_PISCADAS + 1) * CURA_PISCA_MS, () => {
+      this.curaBrilho = false;
+      this.curaPiscaOn = false;
+      if (this.fimDeJogo) return;
+      if (brilho && this.vilao.postFX) this.vilao.postFX.remove(brilho);
+      if (!this.vilaoAtacando) this.vilao.clearTint();
+      desenharBarras(this);
+    });
+  }
+
+  // animação de andar: a triste quando a vida está baixa (se a fase tiver)
+  animacaoAndar() {
+    const a = this.cfg.anims;
+    const baixa = this.cfg.vidaBaixa;
+    if (a.andarTriste && baixa && this.vilaoVida <= baixa * this.vilaoVidaMax) return a.andarTriste;
+    return a.andar;
+  }
+
   derrotaDoVilao() {
     this.fimDeJogo = true;
+    this.vilaoBebendo = false;
+    this.curaBrilho = false;
+    this.curaPiscaOn = false;
 
     // vitória: grava o tempo desta luta no ranking
     this.tempoLuta = (this.time.now - this.inicioLuta) / 1000;
     this.registrarTempo();
 
     this.vilao.clearTint();
+    if (this.vilao.postFX) this.vilao.postFX.clear();   // tira o contorno verde, se estiver ligado
+    this.tweens.killTweensOf(this.vilao);
+    this.vilao.setAlpha(1);   // se morreu no meio da esquiva, ele não pode ficar invisível
     this.limparTiros();
 
     // se o vilão estava no ar (pisão), ele cai antes da animação de morte
@@ -638,7 +772,7 @@ class CenaLuta extends Phaser.Scene {
       });
     };
 
-    // se a fase tem animação de morte, ela toca; se não, o ogro tomba; senão, some com um fade
+    // se a fase tem animação de morte, ela toca; se não, o vilão tomba; senão, some com um fade
     if (this.cfg.anims.morte) {
       this.vilao.play(this.cfg.anims.morte);
       this.vilao.once('animationcomplete', depoisDaQueda);
@@ -696,7 +830,7 @@ class CenaLuta extends Phaser.Scene {
     this.pulouNoAviso = false;   // começa a contar os pulos deste aviso
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
-    // a animação de ataque toca durante o aviso: a clava, ou o agachar do pisão
+    // a animação de ataque toca durante o aviso: o golpe corpo a corpo, ou o agachar do pisão
     if (nome === 'clava' && this.cfg.anims.ataque) this.vilao.play(this.cfg.anims.ataque);
     else if (nome === 'pisao' && this.cfg.anims.pisaoAgachar) this.vilao.play(this.cfg.anims.pisaoAgachar);
 
@@ -712,10 +846,10 @@ class CenaLuta extends Phaser.Scene {
     });
   }
 
-  // golpe corpo a corpo: avanço rápido, arco de corte e dano se o herói estiver no alcance
+  // golpe corpo a corpo: avanço rápido, arco de corte (se a fase quiser) e dano se o herói estiver no alcance
   vilaoGolpeClava(g, dir) {
     if (g.avanco) this.tweens.add({ targets: this.vilao, x: this.vilao.x + dir * g.avanco.distancia, duration: g.avanco.duracao, yoyo: true });
-    this.desenharCorte(dir);
+    if (g.corte !== false) this.desenharCorte(dir);
 
     const heroiNaFrente = (this.heroi.x - this.vilao.x) * dir > 0;
     const alcancou = Math.abs(this.vilao.x - this.heroi.x) <= g.alcance;
@@ -808,13 +942,17 @@ class CenaLuta extends Phaser.Scene {
   // o vilão tenta esquivar quando o herói soca perto dele (só nas fases que têm esquiva)
   tentarEsquivar() {
     if (!this.cfg.esquiva) return;
-    const perto = Math.abs(this.vilao.x - this.heroi.x) <= ALCANCE_SOCO;
-    const livre = !this.vilaoAtacando && !this.vilaoEsquivando;
+    const perto = Math.abs(this.vilao.x - this.heroi.x) <= (this.cfg.alcanceSoco || ALCANCE_SOCO);
+    const livre = !this.vilaoAtacando && !this.vilaoEsquivando && !this.vilaoBebendo && !this.vilaoAnimando;
     if (perto && livre && this.time.now >= this.vilaoProximaEsquiva) this.vilaoEsquivar();
   }
 
   vilaoEsquivar() {
     tocarSom(this, 'esquiva');
+
+    // se a animação de dano foi cortada, limpa o estado para ela não travar
+    this.vilaoAnimando = false;
+    this.vilao.off('animationcomplete-' + this.cfg.anims.hit);
 
     this.vilaoEsquivando = true;
     this.vilaoInvulneravel = true; // enquanto está debaixo da terra, o soco não pega
@@ -824,6 +962,9 @@ class CenaLuta extends Phaser.Scene {
     this.vilao.once('animationcomplete', () => {
       if (this.fimDeJogo) return;
 
+      // a poça some junto com ela enquanto fica debaixo da terra
+      this.tweens.add({ targets: this.vilao, alpha: 0, duration: 200 });
+
       // some por um instante e reaparece atrás do herói
       this.time.delayedCall(250, () => {
         if (this.fimDeJogo) return;
@@ -831,8 +972,9 @@ class CenaLuta extends Phaser.Scene {
         const lado = this.vilao.x > this.heroi.x ? -1 : 1;
         this.vilao.x = Phaser.Math.Clamp(this.heroi.x + lado * 50, 32, 480);
 
-        // vulnerável enquanto sai do chão: é a hora de socá-lo
+        // vulnerável enquanto sai do chão: é a hora de socá-la
         this.vilaoInvulneravel = false;
+        this.vilao.setAlpha(1);
         this.vilao.play(this.cfg.anims.surgir);
 
         this.vilao.once('animationcomplete', () => {
@@ -957,7 +1099,7 @@ class CenaLuta extends Phaser.Scene {
 
     if (this.emCombate && this.heroiAtacando && !this.socoAcertou && (emSoco || emChute)) {
       const quadroAtual = Number(this.heroi.frame.name);
-      const perto = Math.abs(this.vilao.x - this.heroi.x) <= ALCANCE_SOCO;
+      const perto = Math.abs(this.vilao.x - this.heroi.x) <= (this.cfg.alcanceSoco || ALCANCE_SOCO);
       const noQuadroDeAcerto = emChute
         ? (quadroAtual >= QUADRO_ACERTO_CHUTE_INI && quadroAtual <= QUADRO_ACERTO_CHUTE_FIM)
         : quadroAtual >= QUADRO_ACERTO_SOCO;
@@ -1015,16 +1157,20 @@ class CenaLuta extends Phaser.Scene {
 
     if (this.vilaoEsquivando) {
       // a animação de afundar e surgir cuida de tudo
+    } else if (this.vilaoBebendo) {
+      // bebendo a poção: parado e vulnerável até a animação acabar ou ser interrompida
     } else if (this.vilaoAtacando) {
       // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
     } else if (this.vilaoAnimando) {
       // animação de dano ou de pouso em andamento: não trocar de animação nem andar
+    } else if (this.podeBeberPocao()) {
+      this.vilaoBeber();
     } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
       this.vilaoParado();
       this.vilaoAtacar();
     } else if (distancia > this.cfg.distanciaLuta) {
       this.vilao.x += direcao * passo(this.cfg.velocidade);
-      this.vilao.play(this.cfg.anims.andar, true);
+      this.vilao.play(this.animacaoAndar(), true);
     } else {
       this.vilaoParado();
     }

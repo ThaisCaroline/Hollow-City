@@ -1,6 +1,10 @@
 // Barras de vida, textos flutuantes e tela de fim de jogo.
 // Todas as funções recebem a cena (cena) como primeiro parâmetro.
 
+// cores do brilho de cura (poção)
+const COR_CURA = 0x4cff6a;         // verde da poção
+const COR_CURA_CLARA = 0xb6ffc4;   // verde claro, para o pedaço de vida recuperado
+
 function criarBarrasDeVida(cena) {
   cena.barras = cena.add.graphics().setDepth(20);
 
@@ -40,8 +44,25 @@ function desenharBarras(cena) {
   g.fillStyle(corHeroi, 1);
   g.fillRect(xHeroi, y, vidaHeroi, altura);
 
-  g.fillStyle(0xffd23f, 1);
+  // barra do vilão; durante o brilho da poção ela pisca em verde
+  const curando = !!cena.curaBrilho;
+  const corVilao = curando && cena.curaPiscaOn ? COR_CURA : 0xffd23f;
+  g.fillStyle(corVilao, 1);
   g.fillRect(xVilao + (larguraVilao - vidaVilao), y, vidaVilao, altura);
+
+  if (curando) {
+    // o pedaço recuperado (a ponta esquerda da barra) fica em verde claro
+    const antes = larguraVilao * (Math.min(cena.vilaoVidaAntesCura, cena.vilaoVida) / cena.vilaoVidaMax);
+    const curado = vidaVilao - antes;
+    if (curado > 0) {
+      g.fillStyle(COR_CURA_CLARA, 1);
+      g.fillRect(xVilao + (larguraVilao - vidaVilao), y, curado, altura);
+    }
+
+    // borda verde acesa
+    g.lineStyle(1, COR_CURA, 1);
+    g.strokeRect(xVilao - 1, y - 1, larguraVilao + 2, altura + 2);
+  }
 }
 
 // texto que sobe e some (DODGE!, MISS...)
