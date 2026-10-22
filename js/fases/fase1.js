@@ -48,7 +48,7 @@ const FASE1 = {
     }
   },
 
-  // poção de cura: ela bebe uma vez por luta, parada e vulnerável.
+  // poção de cura: ela bebe uma vez por luta, parada e vulnerável (3,5 s).
   // Se o herói acertar golpes demais enquanto ela bebe, a poção é interrompida: ela não cura nada e não bebe de novo.
   pocao: {
     gatilho: 0.3,            // bebe quando a vida chega a 30% (ou menos), assim que estiver livre
@@ -134,19 +134,19 @@ const FASE1 = {
       repeat: -1
     });
 
-    // beber: 6 quadros a 2.5 fps = 2,4 s vulnerável
+    // ataque: a bola de fogo enfiada no herói (6 quadros a 8 fps = 0,75 s; o quadro 5 chega em ~0,5 s)
     cena.anims.create({
-      key: A.beber,
-      frames: cena.anims.generateFrameNumbers(T.beber, { start: 0, end: 5 }),
-      frameRate: 2.5,
+      key: A.ataque,
+      frames: cena.anims.generateFrameNumbers(T.ataque, { start: 0, end: 5 }),
+      frameRate: 8,
       repeat: 0
     });
 
-    // beber: 6 quadros a 4 fps = 1,5 s vulnerável
+    // beber: 6 quadros em 3,5 s (6 / 3.5 fps) = 3,5 s vulnerável
     cena.anims.create({
       key: A.beber,
       frames: cena.anims.generateFrameNumbers(T.beber, { start: 0, end: 5 }),
-      frameRate: 4,
+      frameRate: 6 / 3.5,
       repeat: 0
     });
 
