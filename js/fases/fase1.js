@@ -2,7 +2,7 @@
 
 const FASE1 = {
   nome: 'MASKED ONE',        // nome provisório que aparece nas falas; troque quando decidir o nome dela
-  rotuloVilao: 'VILLAIN',    // nome que aparece na barra de vida do vilão
+  rotuloVilao: 'WITCH',    // nome que aparece na barra de vida do vilão
   dialogoHeroi: 'So you are the one they sent. Who leads these monsters?',
   dialogoVilao: 'Turn back, detective. Some questions are better left unanswered.',
 
@@ -34,11 +34,11 @@ const FASE1 = {
   // animação de dano: intervalo mínimo entre duas
   hitCooldown: 1000,         // ms
 
-  // golpes da criatura. O golpe se chama "clava" por causa do código da cena, mas aqui é a bola de fogo
-  // enfiada de perto no herói: avança, e o dano cai quando a chama aparece (quadro 5 da animação)
+  // golpes da criatura. O golpe corpo a corpo dela é a bola de fogo enfiada de perto no herói:
+  // avança, e o dano cai quando a chama aparece (quadro 5 da animação)
   golpes: {
     intervalo: 1000,         // um ataque a cada 1 segundo
-    clava: {
+    corpo: {
       dano: 23,
       alcance: 55,
       desviaCom: 'pulo',

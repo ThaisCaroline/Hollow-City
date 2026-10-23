@@ -1,10 +1,10 @@
 // A cena de luta: herói, vilão e o loop principal.
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
-// O herói fica em luta/heroi.js; os itens que o herói pega (poção, soco inglês) em luta/pocao-heroi.js; os golpes, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
-// Cada fase (fases/fase1.js, fases/fase2.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
+// O herói fica em luta/heroi.js; os itens que o herói pega e usa (poção, soco inglês) em luta/pocao-heroi.js; os golpes, a bola de fogo, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
+// Cada fase (fases/fase1.js, fases/fase2.js, fases/fase-boss.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
-// ordem das lutas no caminho: criatura, ogro, criatura, ogro
-const FASES = [FASE1, FASE2, FASE1, FASE2];
+// ordem das lutas no caminho: criatura, ogro, criatura, boss final
+const FASES = [FASE1, FASE2, FASE1, FASE_BOSS];
 
 // herói novo: frames de 48x48 com os pés em y=39
 const HEROI_ORIGEM_Y = 39 / 48;
@@ -17,7 +17,8 @@ class CenaLuta extends Phaser.Scene {
   init(data) {
     // fase = índice da luta no caminho (0 = primeira)
     this.fase = (data && data.fase) || 0;
-    this.cfg = FASES[Math.min(this.fase, FASES.length - 1)];
+    // data.cfg: recomeço direto numa fase específica (a fase 2 do boss); sem ele, vale a fase do caminho
+    this.cfg = (data && data.cfg) || FASES[Math.min(this.fase, FASES.length - 1)];
   }
 
   preload() {
@@ -36,10 +37,14 @@ class CenaLuta extends Phaser.Scene {
     // reinício da cena: o relógio da cena guarda o valor da última vez que rodou, então sincroniza com o tempo do jogo
     this.time.now = this.game.loop.time;
 
-    // o cenário fica fixo na tela; ele só rola durante a caminhada da entrada
-    this.fundo = this.add.tileSprite(0, 0, 512, 224, this.cfg.cenarioChave).setOrigin(0, 0);
-    this.fundo.y = this.cfg.cenarioAjusteY || 0;   // ajuste de altura do cenário, aplicado em toda tentativa
-
+    // fases com cenário grande (o boss): mostra a imagem reduzida e subida, igual à cutscene
+    if (this.cfg.cenarioEscala) {
+      this.fundo = this.add.image(0, this.cfg.cenarioY || 0, this.cfg.cenarioChave).setOrigin(0, 0).setScale(this.cfg.cenarioEscala);
+    } else {
+      this.fundo = this.add.tileSprite(0, 0, 512, 224, this.cfg.cenarioChave).setOrigin(0, 0);
+      this.fundo.y = this.cfg.cenarioAjusteY || 0;   // ajuste de altura do cenário, aplicado em toda tentativa
+    }
+    
     // garante o estado normal ao reiniciar a luta
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
@@ -52,9 +57,9 @@ class CenaLuta extends Phaser.Scene {
 
     // a entrada do herói e os diálogos acontecem na primeira vez que cada fase é jogada
     const jaVista = (this.game.fasesVistas || {})[this.fase];
-    const comEntrada = !jaVista;
+    const comEntrada = !jaVista && !this.cfg.semEntrada;
 
-    this.heroi = this.add.sprite(comEntrada ? 40 : 150, CHAO_Y, 'heroi-andar').setOrigin(0.5, HEROI_ORIGEM_Y).setScale(2);
+    this.heroi = this.add.sprite(comEntrada ? 40 : (this.cfg.inicioHeroi || 150), CHAO_Y, 'heroi-andar').setOrigin(0.5, HEROI_ORIGEM_Y).setScale(2);
     this.heroi.setFrame(0);
     this.heroiAtacando = false;
     this.heroiMorrendo = false;
@@ -71,7 +76,7 @@ class CenaLuta extends Phaser.Scene {
     this.combo = 0;              // quantos ataques seguidos o herói encadeou
     this.comboAte = 0;           // até quando o próximo ataque ainda entra no combo (ms)
 
-    this.vilao = this.add.sprite(360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
+    this.vilao = this.add.sprite(this.cfg.inicioVilao || 360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
     this.vilao.setVisible(!comEntrada);
 
@@ -115,6 +120,8 @@ class CenaLuta extends Phaser.Scene {
 
     // tiro: munição volta ao máximo a cada tentativa, e as balas ficam nesta lista
     this.tiros = [];
+    this.bolas = [];             // bolas de fogo do boss em voo
+    this.viradaEvento = null;    // o piscar da barra no modo virada (a poção desliga)
     this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
     this.textoMunicao = this.cfg.tiro
       ? this.add.text(12, 38, '', { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 3 }).setDepth(21)
@@ -125,7 +132,9 @@ class CenaLuta extends Phaser.Scene {
     this.teclaSoco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     this.teclaPulo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.teclaTiro = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    this.teclaPocao = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
     criarControlesDeToque(this);
+    this.criarBotaoPocao();   // o ícone da poção perto das munições (só nas lutas que dão a poção ao herói)
 
     if (!comEntrada) this.comecarCombate();
   }
@@ -257,6 +266,10 @@ class CenaLuta extends Phaser.Scene {
     this.atualizarTiros(delta);
     if (this.fimDeJogo) return;
 
+    // bolas de fogo do boss em voo
+    this.atualizarBolas(delta);
+    if (this.fimDeJogo) return;
+
     // pulo do vilão (pisão do ogro): sobe, cai e chama o pouso
     if (this.vilaoNoAr) {
       this.vilaoVelY += GRAVIDADE * (delta / 1000);
@@ -291,6 +304,9 @@ class CenaLuta extends Phaser.Scene {
     } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
       this.vilaoParado();
       this.vilaoAtacar();
+    } else if (this.podeAtirarBola()) {
+      this.vilaoParado();
+      this.vilaoAtacar({ nome: 'bola', golpe: this.cfg.golpes.bola });
     } else if (distancia > this.cfg.distanciaLuta) {
       this.vilao.x += direcao * passo(this.cfg.velocidade);
       this.vilao.play(this.animacaoAndar(), true);

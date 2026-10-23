@@ -1,8 +1,10 @@
-// Luta: os golpes do vilão (clava, pisão), o desvio de tiro, o bloqueio, a esquiva e o movimento.
+// Luta: os golpes do vilão (corpo a corpo, pisão, bola de fogo), o desvio de tiro, o bloqueio, a esquiva e o movimento.
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
+const COR_CHAMA = 0xff9a2e;   // laranja da silhueta do piscar em chamas
+
 class LutaVilaoGolpes {
-  // quando uma bala aparece, o ogro tenta pular para desviar; cada tentativa inicia o cooldown
+  // quando uma bala aparece, o vilão tenta pular para desviar (só nas fases com desvioTiro, como a do ogro); cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
     if (!d || !this.emCombate || this.fimDeJogo || this.vilaoNoAr || this.vilaoAtacando || this.vilaoEsquivando || this.vilaoAnimando || this.vilaoBloqueando) return;
@@ -25,12 +27,14 @@ class LutaVilaoGolpes {
     return this.cfg.golpes[nome];
   }
 
-  // sorteia entre clava e pisão, se a fase tiver pisão e a escolha for aleatória
+  // sorteia entre o corpo a corpo e o pisão, se a fase tiver pisão e a escolha for aleatória;
+  // a fase que tem chute (a segunda do boss) sorteia o chute com a chance dela
   escolherGolpe() {
     const golpes = this.cfg.golpes;
-    if (!golpes || !golpes.pisao) return 'clava';
-    if (golpes.escolha === 'aleatorio') return Math.random() < 0.5 ? 'clava' : 'pisao';
-    return 'clava';
+    if (golpes && golpes.chute && Math.random() < golpes.chanceChute) return 'chute';
+    if (!golpes || !golpes.pisao) return 'corpo';
+    if (golpes.escolha === 'aleatorio') return Math.random() < 0.5 ? 'corpo' : 'pisao';
+    return 'corpo';
   }
 
   intervaloEntreGolpes() {
@@ -58,9 +62,11 @@ class LutaVilaoGolpes {
     this.pulouNoAviso = false;   // começa a contar os pulos deste aviso
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
-    // a animação de ataque toca durante o aviso: o golpe corpo a corpo, ou o agachar do pisão
-    if (nome === 'clava' && this.cfg.anims.ataque) this.vilao.play(this.cfg.anims.ataque);
+    // a animação de ataque toca durante o aviso: o corpo a corpo, o chute, o agachar do pisão ou a bola de fogo
+    if (nome === 'corpo' && this.cfg.anims.ataque) this.vilao.play(this.cfg.anims.ataque);
+    else if (nome === 'chute' && this.cfg.anims.chute) this.vilao.play(this.cfg.anims.chute);
     else if (nome === 'pisao' && this.cfg.anims.pisaoAgachar) this.vilao.play(this.cfg.anims.pisaoAgachar);
+    else if (nome === 'bola' && this.cfg.anims.bola) this.vilao.play(this.cfg.anims.bola);
 
     // o vilão mira para o lado em que o herói estava quando o aviso começou
     const dir = this.heroi.x < this.vilao.x ? -1 : 1;
@@ -69,13 +75,15 @@ class LutaVilaoGolpes {
       if (this.fimDeJogo) return;
       this.vilao.clearTint();
 
+      // o chute usa a mesma conta do corpo a corpo (alcance, lado e desvio), só com os valores dele
       if (nome === 'pisao') this.vilaoPular();
-      else this.vilaoGolpeClava(g, dir);
+      else if (nome === 'bola') this.vilaoDisparaBola(g, dir);
+      else this.vilaoGolpeCorpo(g, dir);
     });
   }
 
   // golpe corpo a corpo: avanço rápido, arco de corte (se a fase quiser) e dano se o herói estiver no alcance
-  vilaoGolpeClava(g, dir) {
+  vilaoGolpeCorpo(g, dir) {
     if (g.avanco) this.tweens.add({ targets: this.vilao, x: this.vilao.x + dir * g.avanco.distancia, duration: g.avanco.duracao, yoyo: true });
     if (g.corte !== false) this.desenharCorte(dir);
 
@@ -83,13 +91,83 @@ class LutaVilaoGolpes {
     const alcancou = Math.abs(this.vilao.x - this.heroi.x) <= g.alcance;
 
     if (alcancou && heroiNaFrente) {
-      if (this.desviouClava(g)) this.mostrarEsquiva();
+      if (this.desviouCorpo(g)) this.mostrarEsquiva();
       else this.danoNoHeroi(g.dano);
     } else if (alcancou && !heroiNaFrente) {
       this.mostrarEsquiva(); // herói passou para trás dele: o golpe pegou só o ar
     }
 
     this.finalizarGolpe();
+  }
+
+  // a fase tem bola de fogo, o herói está longe o bastante e já passou o tempo do último ataque
+  podeAtirarBola() {
+    const b = this.cfg.golpes && this.cfg.golpes.bola;
+    if (!b || !this.emCombate) return false;
+    const longe = Math.abs(this.vilao.x - this.heroi.x) >= b.distanciaMin;
+    return longe && this.time.now >= this.vilaoProximoAtaque;
+  }
+
+  // a bola de fogo sai da mão do vilão (no quadro do arremesso) e voa para o lado do herói
+  vilaoDisparaBola(g, dir) {
+    const bola = this.add.graphics().setDepth(16);
+    bola.fillStyle(0xff8a00, 1);
+    bola.fillCircle(0, 0, 8);
+    bola.fillStyle(0xffe08a, 1);
+    bola.fillCircle(0, 0, 4);
+
+    const x = this.vilao.x + dir * g.saidaX;
+    bola.setPosition(x, CHAO_Y - g.alturaInicial);
+    this.tweens.add({ targets: bola, scale: 1.25, duration: 120, yoyo: true, repeat: -1 });   // a chama pulsa
+
+    this.bolas.push({ g: bola, dir, partiu: x, dado: g, passou: false });
+    this.finalizarGolpe();
+  }
+
+  // move as bolas de fogo: elas descem da mão até a altura do peito do herói e acertam se ele não desviar
+  atualizarBolas(delta) {
+    if (!this.bolas.length) return;
+
+    const sobraram = [];
+    for (const b of this.bolas) {
+      if (!b.g.active) continue;
+      const g = b.dado;
+      b.g.x += b.dir * g.velocidade * (delta / 1000);
+
+      const progresso = Math.min(1, Math.abs(b.g.x - b.partiu) / g.descida);
+      b.g.y = CHAO_Y - (g.alturaInicial + (g.alturaFinal - g.alturaInicial) * progresso);
+
+      // chegou no herói: acerta, ou passa por cima / por baixo se ele estiver pulando ou agachado
+      if (!b.passou && Math.abs(b.g.x - this.heroi.x) <= g.raio) {
+        if (this.desviadoPor(g.desviaCom)) {
+          b.passou = true;
+          this.mostrarEsquiva();
+        } else {
+          this.destruirBola(b);
+          this.danoNoHeroi(g.dano);
+          continue;
+        }
+      }
+
+      if (b.g.x < -20 || b.g.x > 532) {
+        this.destruirBola(b);
+        continue;
+      }
+
+      sobraram.push(b);
+    }
+
+    if (!this.fimDeJogo) this.bolas = sobraram;
+  }
+
+  destruirBola(b) {
+    this.tweens.killTweensOf(b.g);
+    if (b.g.active) b.g.destroy();
+  }
+
+  limparBolas() {
+    this.bolas.forEach((b) => this.destruirBola(b));
+    this.bolas = [];
   }
 
   // pisão: o vilão salta; a queda é o que causa dano na área
@@ -185,6 +263,13 @@ class LutaVilaoGolpes {
   // vilão parado em pé: sempre o quadro 0 da textura de parado.
   // (setFrame(0) sozinho usaria a textura atual, que pode ser a de surgir do chão)
   vilaoParado() {
+    // fase com idle animado (o boss): fica respirando; o play só (re)começa se o idle ainda não estiver tocando
+    if (this.cfg.idleAnimado) {
+      this.vilao.play(this.cfg.anims.parado, true);
+      this.ajustarOrigemVilao(this.cfg.texturas.parado);
+      return;
+    }
+
     this.vilao.stop();
     this.vilao.setTexture(this.cfg.texturas.parado, 0);
     this.ajustarOrigemVilao(this.cfg.texturas.parado);
@@ -204,6 +289,12 @@ class LutaVilaoGolpes {
     // se a animação de dano foi cortada, limpa o estado para ela não travar
     this.vilaoAnimando = false;
     this.vilao.off('animationcomplete-' + this.cfg.anims.hit);
+
+    // fase com piscar em chamas (o boss): esquiva feita no código, sem sheet de afundar e surgir
+    if (this.cfg.esquivaChamas) {
+      this.vilaoEsquivarChamas();
+      return;
+    }
 
     this.vilaoEsquivando = true;
     this.vilaoInvulneravel = true; // enquanto está debaixo da terra, o soco não pega
@@ -238,8 +329,57 @@ class LutaVilaoGolpes {
     });
   }
 
-  // a clava conta como desviada se o herói estiver no ar agora ou se pulou durante o aviso
-  desviouClava(g) {
+  // piscar em chamas: o corpo vira uma silhueta laranja que esmaece em brasas e reaparece atrás do herói
+  vilaoEsquivarChamas() {
+    this.vilaoEsquivando = true;
+    this.vilaoInvulneravel = true;   // enquanto some, o soco cai no vazio (MISS) e o tiro passa
+    this.vilao.setTintFill(COR_CHAMA);
+    this.brasas(this.vilao.x, CHAO_Y - 60);
+    this.tweens.add({ targets: this.vilao, alpha: 0, duration: 300 });
+
+    // some por um instante e reaparece do outro lado do herói
+    this.time.delayedCall(550, () => {
+      if (this.fimDeJogo) return;
+
+      const lado = this.vilao.x > this.heroi.x ? -1 : 1;
+      this.vilao.x = Phaser.Math.Clamp(this.heroi.x + lado * 110, 32, 480);
+      this.brasas(this.vilao.x, CHAO_Y - 60);
+
+      // volta com um clarão e fica vulnerável: é a hora de bater
+      this.vilaoInvulneravel = false;
+      this.tweens.add({ targets: this.vilao, alpha: 1, duration: 200 });
+
+      this.time.delayedCall(250, () => {
+        if (this.fimDeJogo) return;
+        this.vilao.clearTint();
+        this.vilaoEsquivando = false;
+        this.vilaoProximaEsquiva = this.time.now + this.cfg.cooldownEsquiva;
+        this.vilaoProximoAtaque = this.time.now + 400;   // contra-ataque rápido
+      });
+    });
+  }
+
+  // faíscas que sobem e somem
+  brasas(x, y) {
+    for (let i = 0; i < 12; i++) {
+      const b = this.add.rectangle(
+        x + Phaser.Math.Between(-35, 35),
+        y + Phaser.Math.Between(-30, 40),
+        3, 3,
+        i % 3 === 0 ? 0xffe08a : 0xff8a00
+      ).setDepth(16);
+      this.tweens.add({
+        targets: b,
+        y: b.y - Phaser.Math.Between(20, 55),
+        alpha: 0,
+        duration: Phaser.Math.Between(350, 650),
+        onComplete: () => b.destroy()
+      });
+    }
+  }
+
+  // o golpe corpo a corpo conta como desviado se o herói estiver no ar agora ou se pulou durante o aviso
+  desviouCorpo(g) {
     const meios = Array.isArray(g.desviaCom) ? g.desviaCom : [g.desviaCom];
     const pulou = meios.includes('pulo') && this.pulouNoAviso;
     return pulou || this.desviadoPor(g.desviaCom);

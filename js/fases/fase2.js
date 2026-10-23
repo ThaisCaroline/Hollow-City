@@ -43,9 +43,9 @@ const FASE2 = {
   // golpes do ogro
   golpes: {
     intervalo: 1600,          // um ataque a cada 1,6 segundo
-    // clava: golpe alto, desviado agachando ou pulando durante o aviso
-    clava: {
-      dano: 40,
+    // corpo a corpo (a clava): golpe alto, desviado agachando ou pulando durante o aviso
+    corpo: {
+      dano: 35,
       alcance: 80,
       desviaCom: ['agachar', 'pulo'],   // a clava pode ser desviada agachando ou pulando
       aviso: 500,             // aviso laranja de 0,5 s
@@ -60,7 +60,7 @@ const FASE2 = {
       tremor: { duracao: 150, forca: 0.008 }, // tremor quando ele pousa
       corPoeira: 0x3a3a3a     // cor da poeira do pouso
     },
-    escolha: 'aleatorio',     // clava ou pisão, sorteado a cada ataque
+    escolha: 'aleatorio',     // corpo a corpo ou pisão, sorteado a cada ataque
     avancoDepoisPulo: 30,     // anda um pouco em direção ao herói depois de pousar
     alturaPulo: 240           // impulso do pulo do ogro (a bruxa e o herói usam 480)
   },
@@ -83,10 +83,10 @@ const FASE2 = {
   // Soco e chute não causam dano (aparece BLOCKED); o tiro passa e causa dano normal.
   // Logo depois do bloqueio ele faz o pisão, mais forte que o normal
   bloqueio: {
-    primeiro: 4000,     // ms: o primeiro bloqueio só fica disponível depois disso, contado do começo da luta
-    intervalo: 8000,    // ms entre um bloqueio e o seguinte, contados do começo do bloqueio
+    primeiro: 3000,     // ms: o primeiro bloqueio só fica disponível depois disso, contado do começo da luta
+    intervalo: 7000,    // ms entre um bloqueio e o seguinte, contados do começo do bloqueio
     duracao: 1500,      // ms de braços cruzados, antes do pisão
-    pisaoDano: 40       // dano do pisão logo depois do bloqueio (o pisão normal tira 25)
+    pisaoDano: 35       // dano do pisão logo depois do bloqueio (o pisão normal tira 25)
   },
 
   // desvio de tiro: o ogro tenta pular quando uma bala aparece

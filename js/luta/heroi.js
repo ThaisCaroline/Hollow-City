@@ -16,14 +16,21 @@ const TIRO_QUADRO_DISPARO = 3;
 
 // soco inglês: o ogro deixa cair na luta 2 e vale a partir da luta 3 (sem anotar nada, só pelo número da luta)
 const SOCO_INGLES_LUTA = 2;           // índice da primeira luta com o soco inglês (2 = a luta 3)
-const DANO_SOCO_INGLES = 20;          // dano do soco com o soco inglês
-const DANO_SOCO_INGLES_VIRADA = 30;   // dano do soco com o soco inglês no modo virada
-const DANO_CHUTE_INGLES = 30;         // dano do chute (3º golpe do combo) com o soco inglês
+const DANO_SOCO_INGLES = 35;          // dano do soco com o soco inglês
+const DANO_SOCO_INGLES_VIRADA = 55;   // dano do soco com o soco inglês no modo virada
+const DANO_CHUTE_INGLES = 50;         // dano do chute (3º golpe do combo) com o soco inglês
+const DANO_CHUTE_INGLES_VIRADA = 60;  // dano do chute com o soco inglês no modo virada
 
 class LutaHeroi {
   // o herói já está com o soco inglês nesta luta?
   temSocoIngles() {
     return this.fase >= SOCO_INGLES_LUTA;
+  }
+
+  // dano do chute: sem o soco inglês é sempre 20; com ele, 30 (35 no modo virada)
+  danoDoChute() {
+    if (!this.temSocoIngles()) return DANO_CHUTE;
+    return this.emVirada ? DANO_CHUTE_INGLES_VIRADA : DANO_CHUTE_INGLES;
   }
 
   // carrega os sheets (frames 48x48) e os ícones do herói; chamado pelo preload da cena de luta
@@ -39,6 +46,7 @@ class LutaHeroi {
     this.load.spritesheet('heroi-hit', 'assets/heroi/heroi_hit.png', tamanho);
     this.load.spritesheet('heroi-pegar', 'assets/heroi/heroi_pegar_pocao.png', tamanho);
     this.load.spritesheet('heroi-pegar-soco', 'assets/heroi/heroi_pegar_soco_ingles.png', tamanho);
+    this.load.spritesheet('heroi-beber', 'assets/heroi/heroi_beber_pocao.png', tamanho);
     this.load.image('icone-soco', 'assets/icones/icone_soco.png');
     this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
     this.load.image('icone-soco-ingles', 'assets/icones/icone_soco_ingles.png');
@@ -64,6 +72,7 @@ class LutaHeroi {
     criar('heroi-hit', 5, 16, 0);
     criar('heroi-pegar', 8, 9, 0);        // pegar a poção: 9 quadros a 9 fps = 1 s
     criar('heroi-pegar-soco', 8, 9, 0);   // pegar o soco inglês: igual
+    criar('heroi-beber', 5, 8, 0);        // beber a poção: 6 quadros a 8 fps = 0,75 s
   }
 
   // soco; o 3º ataque seguido (dentro da janela do combo) vira chute
@@ -223,7 +232,7 @@ class LutaHeroi {
     this.emVirada = true;
     this.cameras.main.shake(200, 0.006);
 
-    this.time.addEvent({
+    this.viradaEvento = this.time.addEvent({
       delay: 250,
       loop: true,
       callback: () => {
@@ -252,6 +261,16 @@ class LutaHeroi {
     });
   }
 
+  // a poção deixou o herói forte de novo: sai do modo virada (e pode entrar de novo se a vida cair)
+  encerrarVirada() {
+    this.emVirada = false;
+    this.piscaOn = false;
+    if (this.viradaEvento) {
+      this.viradaEvento.remove();
+      this.viradaEvento = null;
+    }
+  }
+
   derrotaDoHeroi() {
     this.fimDeJogo = true;
     this.heroiMorrendo = true;
@@ -261,6 +280,7 @@ class LutaHeroi {
     this.heroi.y = CHAO_Y;
     this.heroi.clearTint();
     this.limparTiros();
+    this.limparBolas();
     this.heroi.play('heroi-morte');
 
     // o som de derrota toca junto com o texto GAME OVER
@@ -273,6 +293,13 @@ class LutaHeroi {
   // botões do herói: soco, tiro, agachar, pulo e gravidade. Funcionam na entrada e na luta.
   acoesDoHeroi(delta) {
     const passo = (velocidade) => (velocidade * delta) / 1000;
+
+    // poção de cura (só nas lutas que dão uma ao herói): a tecla C ou o botão na tela
+    if (this.cfg.pocaoHeroi) {
+      const pediuPocao = Phaser.Input.Keyboard.JustDown(this.teclaPocao) || this.toque.pocao;
+      this.toque.pocao = false;
+      if (pediuPocao) this.usarPocaoHeroi();
+    }
 
     // soco (e chute, no 3º ataque seguido)
     const pediuSoco = Phaser.Input.Keyboard.JustDown(this.teclaSoco) || this.toque.soco;
@@ -365,7 +392,7 @@ class LutaHeroi {
           tocarSom(this, 'miss');
           flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'BLOCKED');
         } else if (emChute) {
-          this.danoNoVilao(this.temSocoIngles() ? DANO_CHUTE_INGLES : DANO_CHUTE, this.cfg.sons.dano);
+          this.danoNoVilao(this.danoDoChute(), this.cfg.sons.dano);
         } else {
           this.causarDano();
         }

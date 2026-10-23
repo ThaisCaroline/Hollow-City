@@ -39,10 +39,23 @@ function desenharBarras(cena) {
   const vidaHeroi = larguraHeroi * (cena.heroiVida / VIDA_HEROI);
   const vidaVilao = larguraVilao * (cena.vilaoVida / cena.vilaoVidaMax);
 
-  // no modo virada, a barra do herói pisca em vermelho
-  const corHeroi = cena.emVirada && cena.piscaOn ? 0xff3030 : 0xffd23f;
+    // no modo virada, a barra do herói pisca em vermelho; durante o brilho da poção do herói, pisca em verde
+  let corHeroi = cena.emVirada && cena.piscaOn ? 0xff3030 : 0xffd23f;
+  if (cena.curaHeroiBrilho && cena.curaHeroiPiscaOn) corHeroi = COR_CURA;
   g.fillStyle(corHeroi, 1);
   g.fillRect(xHeroi, y, vidaHeroi, altura);
+
+  if (cena.curaHeroiBrilho) {
+    // o pedaço recuperado (a ponta direita da barra) fica em verde claro, com a borda verde acesa
+    const antes = larguraHeroi * (Math.min(cena.heroiVidaAntesCura, cena.heroiVida) / VIDA_HEROI);
+    const curado = vidaHeroi - antes;
+    if (curado > 0) {
+      g.fillStyle(COR_CURA_CLARA, 1);
+      g.fillRect(xHeroi + antes, y, curado, altura);
+    }
+    g.lineStyle(1, COR_CURA, 1);
+    g.strokeRect(xHeroi - 1, y - 1, larguraHeroi + 2, altura + 2);
+  }
 
   // barra do vilão; durante o brilho da poção ela pisca em verde
   const curando = !!cena.curaBrilho;
@@ -136,9 +149,8 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
 
     cena.tweens.add({ targets: botaoJogar, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
 
-    // jogar de novo: reinicia na mesma luta
-    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase });
-    botaoJogar.on('pointerdown', jogarDeNovo);
+    // jogar de novo: reinicia na mesma luta; se o herói morreu numa fase que pede para recomeçar nela mesma (a fase 2 do boss), volta nela
+    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase, cfg: cena.cfg.recomecarAqui ? cena.cfg : null });    botaoJogar.on('pointerdown', jogarDeNovo);
     cena.input.keyboard.once('keydown-ENTER', jogarDeNovo);
 
     // voltar ao mapa: a luta atual continua como próxima no caminho

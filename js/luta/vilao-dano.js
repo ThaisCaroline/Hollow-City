@@ -179,6 +179,13 @@ class LutaVilaoDano {
   }
 
   derrotaDoVilao() {
+    // o boss tem duas fases: quando a vida da primeira zera, ele cai, levanta e vira a segunda (fases/fase-boss.js).
+    // Só a vida da segunda fase termina a luta de verdade
+    if (this.cfg.transicao) {
+      this.cfg.transicao(this);
+      return;
+    }
+
     this.fimDeJogo = true;
     this.vilaoBebendo = false;
     this.vilaoBloqueando = false;
@@ -194,6 +201,7 @@ class LutaVilaoDano {
     this.tweens.killTweensOf(this.vilao);
     this.vilao.setAlpha(1);   // se morreu no meio da esquiva, ele não pode ficar invisível
     this.limparTiros();
+    this.limparBolas();
 
     // se o vilão estava no ar (pisão), ele cai antes da animação de morte
     this.vilaoNoAr = false;
