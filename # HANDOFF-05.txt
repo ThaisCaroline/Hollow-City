@@ -1,0 +1,82 @@
+# HANDOFF — Hollow City, game.js dividido, poção da criatura, ogro com bloqueio e soco inglês (22/10/2026)
+
+## Contexto
+Jogo 2D de luta em Phaser 3.80.1 (512x224, pixelArt: true). Tudo que aparece no jogo é em inglês; as conversas são em português.
+
+Regras de trabalho:
+- Uma etapa por vez; código em blocos no chão do chat; arquivo completo só quando eu pedir "doc completo".
+- Antes de gerar código, dizer o tamanho da alteração (pequena, média ou grande) e eu escolho entre só as partes ou o doc completo.
+- Não antecipar etapas que não pedi. Não gerar prompts de imagem sem eu pedir.
+- Quando eu disser que estamos "conversando", não codar.
+- Para decidir coisas: perguntas ponto a ponto, uma de cada vez, com opções (3 perguntas no máximo por rodada), e recomendar o que acha melhor.
+- Quando eu pedir vários arquivos juntos, mandar os docs completos já atualizados.
+
+Git: trabalho na branch devThais. Meu amigo também programa no repositório, então antes de subir: git fetch origin e git log devThais..origin/main --oneline (se não mostrar nada, pode subir). Para mandar para a main sem trocar de branch: git push origin devThais:main. Conferir com git log origin/main --oneline -3. Nunca usar --force. Arte e código vão em commits separados.
+
+Arte (Gemini e ferramenta de animação):
+- Imagens estáticas saem do Gemini; peço fundo MAGENTA liso (#FF00FF), porque o Gemini desenha um xadrez falso no "transparente". Eu mando o arquivo e o Claude reduz para o tamanho real, tira o magenta e entrega PNG transparente com o nome certo.
+- Animações saem da ferramenta de animação (GIF e JSON). O campo "Action Description" corta em ~1000 caracteres: manter os prompts abaixo de 950.
+- Herói: sheets de 48x48, pés em y=39 (origem 39/48), virado para a direita (east); o jogo espelha.
+- Ogro, sheets novos: 144x128, pés em y=104. Os GIFs do ogro vêm em 144x120; o Claude acrescenta 4 px em cima.
+
+## Estado (tudo na main, último commit ed49b72)
+
+1. game.js dividido (era 1220 linhas). Pasta js/luta/, cada arquivo é uma class só para agrupar métodos; no fim do game.js, misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano) copia os métodos para a CenaLuta. No index.html os arquivos de luta/ entram antes do game.js.
+   - luta/heroi.js: constantes do combo, tiro e soco inglês; carregarHeroi, criarAnimacoesHeroi, temSocoIngles, socar, agachar, atirar, balas, danoNoHeroi, virada, derrota, acoesDoHeroi (inclui o teste de acerto, com MISS e BLOCKED).
+   - luta/pocao-heroi.js: o item que cai no K.O. (ITENS_DA_LUTA), o herói andando até ele, pegando, e esperarToque. O nome do arquivo e da classe continuam "pocao", mas hoje ele cuida da poção e do soco inglês (renomear é opcional).
+   - luta/vilao-golpes.js: golpes (clava e pisão), desvio de tiro, bloqueio, esquiva, virarVilao, vilaoParado, animacaoAndar.
+   - luta/vilao-dano.js: causarDano, danoNoVilao, animações de dano, poção de cura da criatura, derrotaDoVilao (K.O.).
+   - game.js: constantes, create, entrada e diálogos, comecarCombate, registrarTempo e update (a cadeia de decisão do vilão ainda mora no update; ideia futura: mover para um método atualizarVilao no vilao-golpes.js).
+
+2. Criatura (fases/fase1.js): a animação criatura-ataque estava faltando e agora existe; ela toca durante o aviso e o avanço do golpe (a criatura continua corpo a corpo, "enfia" a bola de fogo, sem projétil). Beber a poção dura 3,5 s (frameRate 6 / 3.5); o bloco duplicado de beber foi removido.
+
+3. Poção do herói (luta 1, a da criatura): depois que a criatura cai, a poção sai do corpo em arco (cai a 30 px, do lado do herói), o herói anda até ela, toca a animação de pegar (heroi_pegar_pocao.png, 9 quadros, a poção do chão some quando a animação começa), entram o texto e o som do K.O., e depois aparece TAP OR ENTER TO CONTINUE; o toque leva ao ranking. O pensamento do herói ("Hmm... this might come in handy.") está pronto, mas DESLIGADO dentro de /* */ no pocao-heroi.js, para eu testar se o jogador entende só pela animação.
+   - Decisão: o caminho do jogo é linear e o herói pega os itens sozinho ao vencer, então NÃO existe guardar item entre lutas nem reset da run: o número da luta já diz o que o herói tem.
+
+4. Ogro (fases/fase2.js), bloqueio:
+   - Config bloqueio: primeiro 4000 ms, intervalo 8000 ms, duracao 1500 ms, pisaoDano 40.
+   - Por conta própria, só com o herói no chão e dentro de distanciaAtaque (70), o ogro cruza os braços com a clava no peito (ogro_bloqueio.png, 9 quadros, animação ogro-bloqueio a 10 fps, o último segura). Soco e chute não causam dano e aparece BLOCKED (som: reaproveita 'miss'). O tiro passa e causa dano normal. Durante o bloqueio o ogro não desvia de tiro nem toca a animação de dano.
+   - Logo depois dos 1,5 s ele faz o pisão (aviso de agachar, pulo e pouso) com 40 de dano, desviado pulando.
+   - Ataques do ogro: clava 40 (desviada pulando ou agachando), pisão 25 (pulando), pisão do bloqueio 40 (pulando). Clava e pisão normais são sorteados a cada 1,6 s.
+   - O desvio de tiro agora toca a animação de pulo (pisaoAr) e a cadeia do update tem um ramo vilaoDesviando.
+   - FORA desta rodada: golpe especial com soco inglês (os sheets ogro_especial.png e ogro_especial_v3.png foram gerados, mas não são usados), e a cura do ogro.
+
+5. Soco inglês:
+   - O ogro o deixa cair no K.O. (luta 2), com a mesma sequência da poção: item no chão (icone_soco_ingles_chao.png, 24x21), o herói anda até ele e toca heroi_pegar_soco_ingles.png (9 quadros, animação heroi-pegar-soco).
+   - Efeito a partir da luta 3 (SOCO_INGLES_LUTA = 2, sem anotar nada, só pelo número da luta): o botão de soco troca para icone_soco_ingles.png (32x26), o soco tira 20 (virada 30) e o chute 30. Valores em luta/heroi.js. Sem texto avisando. A luta 3 usa a criatura de novo (provisória).
+
+6. Arte nova no repositório:
+   - assets/ogro/ogro_bloqueio.png
+   - assets/heroi/heroi_pegar_pocao.png e heroi_pegar_soco_ingles.png
+   - assets/icones/icone_pocao.png (32x42, guardado para o botão da luta final), icone_pocao_chao.png (16x21), icone_soco_ingles.png (32x26 e botão), icone_soco_ingles_chao.png (24x21)
+
+## Como testar pelo console
+- Ir direto a uma luta (fase 0 = criatura, 1 = ogro, 2 = criatura da luta 3, 3 = ogro da luta 4): game.fasesVistas = { 1: true }; game.scene.getScenes(true)[0].scene.start('CenaLuta', { fase: 1 });
+- Deixar o vilão quase morto: game.scene.getScenes(true)[0].vilaoVida = 5 (e um soco).
+- Testar a poção da criatura: vilaoVida = 85 durante a luta 1.
+
+## Pendências de teste
+- Criatura: poção (beber 3,5 s), interrupção, esquiva, alcance, morte (origemY de criatura-morte: menor desce), animação do ataque.
+- Ogro: equilíbrio do bloqueio (4 s, 8 s, 1,5 s, 40); se o som 'miss' serve para o BLOCKED.
+- Se um jogador novo entende a poção só pela animação, sem o pensamento.
+- O MASKED ONE é nome provisório (aparece nas falas).
+
+## Luta final (ainda não começou)
+Boss como vilão da luta 4 (entra no lugar do ogro depois da cutscene; FASES[3] hoje é o ogro).
+Etapa 1: boss como vilão da luta 4: idle, andar, soco, dano e morte, vida própria, cenário próprio (assets/cenario4b.jpg, 1376x768, recortar para 512x224 no mesmo enquadramento da cutscene), barra de vida larga. Precisa de: cenario4b.jpg e js/config.js. Vida, dano e alcance serão chute inicial.
+Etapa 2: bola de fogo do boss: mesma mecânica da bala do herói, sai da mão no quadro 5 da fireball, vai para a esquerda, tira vida do herói.
+Etapa 3: fase 2 do boss: power-up com tremor e flash, novo boneco (chifres e/ou armadura), Leg Sweep (herói desvia pulando), fireball em rajada.
+Sheets do boss em assets/BossFase1/ (128x128, pés em y=107): boss_idle (4), boss_walk (8), boss_ataque_basico (6), boss_ataque_fireball (6), boss_hit (6), boss_death (7).
+
+Poção na luta final: botão novo no canto direito e uma tecla, com contador como o AMMO ("POTION x1"). Um uso só, restaura 100% da vida do herói, com o mesmo brilho verde da poção da criatura (silhueta, anel no chão e barra de vida). O botão só aparece na luta 4. Usar icone_pocao.png (32x42) ajustado para o botão.
+EM ABERTO: o Claude chegou a perguntar sobre "2 poções" (o herói guarda duas, com 2 usos ou 50% cada, ou só efeito visual de duas saindo do corpo) e não houve resposta.
+
+## Outras pendências
+- Herói de costas no fim da entrada da cutscene: assets/heroi/heroi_costas.png está pronto, falta usar.
+- Pulo ainda reaproveita um quadro do andar (POSE_PULO = 2); sem sheet próprio.
+- Limpeza opcional: criatura_andar_triste.png e criatura_surgir.png em assets/bruxa/ não são mais carregados; sheets antigos da bruxa (vilao-andar.png, vilao-surgir.png) se nada mais usar.
+- Luta 3 é provisória (a criatura tapa o buraco); ainda precisa ser desenhada.
+- App Android (Capacitor): adiado.
+
+## Próximo passo sugerido
+Testar o bloqueio e o drop do soco inglês, ajustar os valores do ogro se a luta ficar muito defensiva e, depois, começar a etapa 1 do boss (mandar assets/cenario4b.jpg e js/config.js).
