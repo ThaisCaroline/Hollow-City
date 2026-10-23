@@ -1,10 +1,10 @@
 // A cena de luta: herói, vilão e o loop principal.
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
 // O herói fica em luta/heroi.js; os itens que o herói pega e usa (poção, soco inglês) em luta/pocao-heroi.js; os golpes, a bola de fogo, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
-// Cada fase (fases/fase1.js, fases/fase2.js, fases/fase-boss.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
+// Cada fase (fases/fase1.js, fases/fase2.js, fases/fase3.js, fases/fase-boss.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
-// ordem das lutas no caminho: criatura, ogro, criatura, boss final
-const FASES = [FASE1, FASE2, FASE1, FASE_BOSS];
+// ordem das lutas no caminho: criatura, ogro, lobisomem, boss final
+const FASES = [FASE1, FASE2, FASE3, FASE_BOSS];
 
 // herói novo: frames de 48x48 com os pés em y=39
 const HEROI_ORIGEM_Y = 39 / 48;
@@ -94,6 +94,11 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoNoAr = false;        // true enquanto o vilão pula (pisão do ogro)
     this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
     this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
+    this.vilaoInvestindo = false;  // true enquanto o lobisomem corre na investida (atravessa o herói)
+    this.vilaoProximaInvestida = 0; // quando o lobisomem pode investir de novo (ms)
+    this.vilaoEmFuria = false;     // true depois que o lobisomem entra na fúria (vermelho, mais rápido)
+    this.furiaTransicao = false;   // true enquanto ele uiva e pisca em vermelho, parado
+    this.vilaoFlashAte = 0;        // até quando dura o flash de dano (a cor da fúria espera ele acabar)
     this.vilaoAltura = 0;
     this.vilaoVelY = 0;
     this.vilaoAnimando = false;    // true enquanto toca o dano ou o pouso do pisão (nada interrompe)
@@ -220,6 +225,7 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
     this.vilaoProximaEsquiva = this.time.now + this.cfg.primeiraEsquiva;
     if (this.cfg.bloqueio) this.vilaoProximoBloqueio = this.time.now + this.cfg.bloqueio.primeiro;
+    if (this.cfg.golpes && this.cfg.golpes.investida) this.vilaoProximaInvestida = this.time.now + this.cfg.golpes.investida.primeira;
 
     criarBarrasDeVida(this);
 
@@ -280,6 +286,10 @@ class CenaLuta extends Phaser.Scene {
     }
     this.vilao.y = CHAO_Y + (this.cfg.descerVilao || 0) - this.vilaoAltura;
 
+    // investida do lobisomem: corre até passar do herói
+    if (this.vilaoInvestindo) this.atualizarInvestida(delta);
+    if (this.fimDeJogo) return;
+
     // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
     // A velocidade, as distâncias e os golpes vêm da fase de cada vilão
     const passo = (velocidade) => (velocidade * delta) / 1000;
@@ -298,6 +308,8 @@ class CenaLuta extends Phaser.Scene {
       // animação de dano ou de pouso em andamento: não trocar de animação nem andar
     } else if (this.vilaoDesviando) {
       // pulando para desviar de tiro: a animação do pulo cuida de tudo até ele pousar
+    } else if (this.podeEntrarEmFuria()) {
+      this.entrarEmFuria();
     } else if (this.podeBeberPocao()) {
       this.vilaoBeber();
     } else if (this.podeBloquear()) {
@@ -309,12 +321,18 @@ class CenaLuta extends Phaser.Scene {
     } else if (this.podeAtirarBola()) {
       this.vilaoParado();
       this.vilaoAtacar({ nome: 'bola', golpe: this.cfg.golpes.bola });
+    } else if (this.podeInvestir()) {
+      this.vilaoParado();
+      this.vilaoAtacar({ nome: 'investida', golpe: this.cfg.golpes.investida });
     } else if (distancia > this.cfg.distanciaLuta) {
-      this.vilao.x += direcao * passo(this.cfg.velocidade);
+      this.vilao.x += direcao * passo(this.cfg.velocidade * this.multFuria('velocidade'));
       this.vilao.play(this.animacaoAndar(), true);
     } else {
       this.vilaoParado();
     }
+
+    // fúria do lobisomem: o corpo continua vermelho depois dos avisos e dos flashes de dano
+    this.manterCorFuria();
 
     // os dois sempre de frente um para o outro
     if (!this.vilaoAtacando) this.virarVilao(this.heroi.x < this.vilao.x);
@@ -322,11 +340,12 @@ class CenaLuta extends Phaser.Scene {
 
     // corpos: no chão, o herói e o vilão não se sobrepõem nem trocam de lado.
     // No ar, acima da altura de passagem, o herói pode cruzar por cima do vilão.
+    // Na investida, o lobisomem atravessa o herói: a regra fica desligada até ele parar.
     const margem = this.cfg.margemCorpo || 30;
     const passagem = this.cfg.alturaPassagem || 40;
     const xAntesRegra = this.heroi.x;
 
-    if (this.heroiAltura < passagem) {
+    if (this.heroiAltura < passagem && !this.vilaoInvestindo) {
       const dx = this.heroi.x - this.vilao.x;
       if (Math.abs(dx) >= 1) this.ladoHeroi = Math.sign(dx);
 

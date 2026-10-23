@@ -1,4 +1,4 @@
-// Luta: os golpes do vilão (corpo a corpo, pisão, bola de fogo), o desvio de tiro, o bloqueio, a esquiva e o movimento.
+// Luta: os golpes do vilão (corpo a corpo, pisão, bola de fogo, investida), o desvio de tiro, o bloqueio, a esquiva e o movimento.
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
 const COR_CHAMA = 0xff9a2e;   // laranja da silhueta do piscar em chamas
@@ -32,13 +32,15 @@ class LutaVilaoGolpes {
   escolherGolpe() {
     const golpes = this.cfg.golpes;
     if (golpes && golpes.chute && Math.random() < golpes.chanceChute) return 'chute';
+    // de perto, a fase com investida (o lobisomem) às vezes dispara correndo em vez de dar a garrada
+    if (golpes && golpes.investida && this.time.now >= this.vilaoProximaInvestida && Math.random() < golpes.investida.chancePerto) return 'investida';
     if (!golpes || !golpes.pisao) return 'corpo';
     if (golpes.escolha === 'aleatorio') return Math.random() < 0.5 ? 'corpo' : 'pisao';
     return 'corpo';
   }
 
   intervaloEntreGolpes() {
-    return (this.cfg.golpes && this.cfg.golpes.intervalo) || 1200;
+    return ((this.cfg.golpes && this.cfg.golpes.intervalo) || 1200) * this.multFuria('intervalo');
   }
 
   // o herói desvia do golpe se estiver em algum dos meios listados: pulando ou agachado
@@ -62,11 +64,12 @@ class LutaVilaoGolpes {
     this.pulouNoAviso = false;   // começa a contar os pulos deste aviso
     this.vilao.setTint(0xffaa44); // aviso: o golpe vem aí (dá tempo de se afastar ou pular)
 
-    // a animação de ataque toca durante o aviso: o corpo a corpo, o chute, o agachar do pisão ou a bola de fogo
+    // a animação de ataque toca durante o aviso: o corpo a corpo, o chute, o agachar do pisão, a bola de fogo ou o preparo da investida
     if (nome === 'corpo' && this.cfg.anims.ataque) this.vilao.play(this.cfg.anims.ataque);
     else if (nome === 'chute' && this.cfg.anims.chute) this.vilao.play(this.cfg.anims.chute);
     else if (nome === 'pisao' && this.cfg.anims.pisaoAgachar) this.vilao.play(this.cfg.anims.pisaoAgachar);
     else if (nome === 'bola' && this.cfg.anims.bola) this.vilao.play(this.cfg.anims.bola);
+    else if (nome === 'investida' && this.cfg.anims.investidaPreparar) this.vilao.play(this.cfg.anims.investidaPreparar);
 
     // o vilão mira para o lado em que o herói estava quando o aviso começou
     const dir = this.heroi.x < this.vilao.x ? -1 : 1;
@@ -78,6 +81,7 @@ class LutaVilaoGolpes {
       // o chute usa a mesma conta do corpo a corpo (alcance, lado e desvio), só com os valores dele
       if (nome === 'pisao') this.vilaoPular();
       else if (nome === 'bola') this.vilaoDisparaBola(g, dir);
+      else if (nome === 'investida') this.vilaoInvestir(g);
       else this.vilaoGolpeCorpo(g, dir);
     });
   }
@@ -214,6 +218,52 @@ class LutaVilaoGolpes {
     const dirPara = this.heroi.x < this.vilao.x ? -1 : 1;
     this.vilao.x = Phaser.Math.Clamp(this.vilao.x + dirPara * avanco, 32, 480);
 
+    this.finalizarGolpe();
+  }
+
+  // a fase tem investida, o herói está longe e já passou o tempo da última investida e do último ataque
+  podeInvestir() {
+    const g = this.cfg.golpes && this.cfg.golpes.investida;
+    if (!g || !this.emCombate) return false;
+    const longe = Math.abs(this.vilao.x - this.heroi.x) >= g.distanciaMin;
+    return longe && this.time.now >= this.vilaoProximaInvestida && this.time.now >= this.vilaoProximoAtaque;
+  }
+
+  // investida: depois do aviso, o vilão dispara correndo na direção do herói, passa por ele e só para do outro lado.
+  // Quem estiver pulando quando ele passa desvia; quem estiver no chão leva o dano
+  vilaoInvestir(g) {
+    const dir = this.heroi.x < this.vilao.x ? -1 : 1;   // mira onde o herói está agora, no fim do aviso
+    this.vilaoInvestindo = true;
+    this.investidaDir = dir;
+    this.investidaLado = dir;          // de que lado do vilão o herói estava quando a corrida começou
+    this.investidaPassou = false;      // o dano (ou o DODGE) só conta uma vez por investida
+    this.investidaAlvo = Phaser.Math.Clamp(this.heroi.x + dir * g.passarDoHeroi, 32, 480);
+    this.virarVilao(dir < 0);
+    this.vilao.play(this.cfg.anims.correr);
+  }
+
+  // a corrida da investida, quadro a quadro (chamado pelo update)
+  atualizarInvestida(delta) {
+    const g = this.cfg.golpes.investida;
+    const dir = this.investidaDir;
+    this.vilao.x += dir * g.velocidade * this.multFuria('velocidade') * (delta / 1000);
+
+    // passou pelo herói: pulando alto o bastante, desviou; no chão, leva o dano
+    if (!this.investidaPassou && Math.sign(this.heroi.x - this.vilao.x) !== this.investidaLado) {
+      this.investidaPassou = true;
+      if (this.desviadoPor(g.desviaCom)) this.mostrarEsquiva();
+      else this.danoNoHeroi(g.dano);
+    }
+
+    const chegou = (this.vilao.x - this.investidaAlvo) * dir >= 0;
+    if (chegou || this.vilao.x <= 32 || this.vilao.x >= 480) this.fimInvestida();
+  }
+
+  fimInvestida() {
+    this.vilaoInvestindo = false;
+    this.vilao.x = Phaser.Math.Clamp(this.vilao.x, 32, 480);
+    this.vilaoParado();
+    this.vilaoProximaInvestida = this.time.now + this.cfg.golpes.investida.cooldown * this.multFuria('intervalo');
     this.finalizarGolpe();
   }
 

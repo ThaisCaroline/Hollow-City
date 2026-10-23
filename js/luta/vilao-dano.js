@@ -1,4 +1,4 @@
-// Luta: dano no vilão, animação de dano, poção de cura da criatura e derrota do vilão (K.O.).
+// Luta: dano no vilão, animação de dano, fúria do lobisomem, poção de cura da criatura e derrota do vilão (K.O.).
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
 // brilho verde da poção (só quando ela termina de beber)
@@ -25,7 +25,9 @@ class LutaVilaoDano {
     desenharBarras(this);
 
     // flash branco ao levar dano; se o vilão estiver no aviso de um golpe, volta para o laranja
+    // (na fúria, o vermelho só volta depois do flash: manterCorFuria espera até vilaoFlashAte)
     this.vilao.setTint(0xffffff);
+    this.vilaoFlashAte = this.time.now + 80;
     this.time.delayedCall(80, () => {
       if (this.vilaoAtacando && !this.fimDeJogo) this.vilao.setTint(0xffaa44);
       else this.vilao.clearTint();
@@ -38,6 +40,59 @@ class LutaVilaoDano {
       this.contarGolpeNaPocao();
       this.animarDanoVilao();
     }
+  }
+
+  // a fase tem fúria (o lobisomem), ela ainda não começou e a vida chegou ao gatilho
+  podeEntrarEmFuria() {
+    const f = this.cfg.furia;
+    return !!f && this.emCombate && !this.vilaoEmFuria && this.vilaoVida <= f.gatilho * this.vilaoVidaMax;
+  }
+
+  // fúria: ele para, a tela treme e o corpo pisca em vermelho; depois fica vermelho, mais rápido e ataca com mais frequência
+  entrarEmFuria() {
+    const f = this.cfg.furia;
+    this.vilaoEmFuria = true;
+    this.furiaTransicao = true;
+    this.vilaoAnimando = true;   // parado durante o uivo: nada interrompe, nem a animação de dano
+    this.vilaoParado();
+
+    if (f.som) tocarSom(this, f.som);
+    this.cameras.main.shake(f.tremor.duracao, f.tremor.forca);
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 110, f.texto);
+
+    // pisca alternando a silhueta vermelha cheia e o vermelho da fúria
+    let piscada = 0;
+    this.time.addEvent({
+      delay: f.piscaMs,
+      repeat: f.piscadas - 1,
+      callback: () => {
+        if (this.fimDeJogo) return;
+        piscada++;
+        if (piscada % 2) this.vilao.setTintFill(f.cor);
+        else this.vilao.setTint(f.cor);
+      }
+    });
+
+    this.time.delayedCall(f.duracao, () => {
+      if (this.fimDeJogo) return;
+      this.furiaTransicao = false;
+      this.vilaoAnimando = false;
+      this.vilao.setTint(f.cor);
+      this.vilao.anims.timeScale = f.animacao;           // as animações ficam mais rápidas
+      this.vilaoProximoAtaque = this.time.now + 300;     // volta atacando
+    });
+  }
+
+  // na fúria o corpo fica vermelho: volta a cor depois de qualquer clearTint (fim do aviso, fim do flash de dano)
+  manterCorFuria() {
+    if (!this.vilaoEmFuria || this.furiaTransicao) return;
+    if (this.vilao.isTinted || this.time.now < this.vilaoFlashAte) return;
+    this.vilao.setTint(this.cfg.furia.cor);
+  }
+
+  // multiplicador de um valor do vilão na fúria (1 fora dela)
+  multFuria(nome) {
+    return this.vilaoEmFuria && this.cfg.furia ? this.cfg.furia[nome] : 1;
   }
 
   // acerta a origem vertical do vilão para a textura em uso (sheets novos têm os pés acima da base do quadro)

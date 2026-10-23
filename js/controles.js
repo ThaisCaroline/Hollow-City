@@ -97,9 +97,10 @@ function criarControlesDeToque(cena) {
   botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');
   const iconeSoco = cena.temSocoIngles && cena.temSocoIngles() ? 'icone-soco-ingles' : 'icone-soco';
   cena.add.image(BOTAO.soco.x, BOTAO.soco.y, iconeSoco).setDepth(11).setAlpha(0.9);
-  // tiro: ataque especial, menor, só na luta 2
+  // tiro: ataque especial, menor, da luta 2 em diante; com as balas de prata (luta 4) o ícone vira a arma prateada
   if (cena.cfg.tiro) {
     botaoToque(cena, BOTAO.tiro, 0xffd23f, 'tiro');
-    cena.add.image(BOTAO.tiro.x, BOTAO.tiro.y, 'icone-tiro').setDepth(11).setAlpha(0.9);
+    const iconeTiro = cena.temBalasPrata && cena.temBalasPrata() ? 'icone-tiro-prata' : 'icone-tiro';
+    cena.add.image(BOTAO.tiro.x, BOTAO.tiro.y, iconeTiro).setDepth(11).setAlpha(0.9);
   }
 }
