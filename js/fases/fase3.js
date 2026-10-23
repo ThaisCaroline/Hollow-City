@@ -10,8 +10,8 @@ const FASE3 = {
   dialogoVilao: 'I can smell your fear, detective...',
   dialogoDerrota: 'The moon... will rise... again...',
 
-  cenario: 'assets/cenario-noite.png',
-  cenarioChave: 'cenario',
+  cenario: 'assets/cenario-lobisomem-512.png',
+  cenarioChave: 'cenario-lobisomem',
 
   // vida, tamanho e movimento do vilão
   vida: 900,

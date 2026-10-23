@@ -150,7 +150,8 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
     cena.tweens.add({ targets: botaoJogar, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
 
     // jogar de novo: reinicia na mesma luta; se o herói morreu numa fase que pede para recomeçar nela mesma (a fase 2 do boss), volta nela
-    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase, cfg: cena.cfg.recomecarAqui ? cena.cfg : null });    botaoJogar.on('pointerdown', jogarDeNovo);
+    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase, cfg: cena.cfg.recomecarAqui ? cena.cfg : null });
+    botaoJogar.on('pointerdown', jogarDeNovo);
     cena.input.keyboard.once('keydown-ENTER', jogarDeNovo);
 
     // voltar ao mapa: a luta atual continua como próxima no caminho
@@ -166,4 +167,68 @@ function formatarCronometro(ms) {
   const min = Math.floor(total / 60);
   const seg = (total - min * 60).toFixed(2).padStart(5, '0');
   return `${String(min).padStart(2, '0')}:${seg}`;
+}
+
+// as listas do ranking: espaço entre as linhas e a reserva (6 espaços) que cada linha deixa entre o nome e o tempo para o carimbo PERFECT
+const RANKING_ESPACO = 6;
+const RANKING_RESERVA = ' '.repeat(7);
+
+// carimbo PERFECT: a palavra amarela, dentro de uma borda, inclinada e piscando, ao lado do nome de cada linha marcada de uma lista
+// (cada linha do Text é uma posição do ranking; o nome ocupa os caracteres 4 a 11 e o carimbo fica na reserva logo depois, nos caracteres 12 a 18).
+
+// carimbo PERFECT: a palavra amarela, dentro de uma borda, inclinada e piscando, no meio do espaço entre o fim do nome e o começo do tempo
+// (cada linha do Text é uma posição do ranking; o nome começa no caractere 4 e o tempo, depois da reserva, no caractere 20).
+// linhas: [{ texto, perfect }], na mesma ordem das linhas do Text; fontSize e lineSpacing: os mesmos da lista, para medir a largura e a altura da linha.
+// Devolve os carimbos criados, para quem chamou poder apagá-los quando a lista mudar
+function selosPerfect(cena, texto, linhas, fontSize, lineSpacing) {
+  const selos = [];
+  if (!linhas.some((l) => l.perfect)) return selos;
+
+  // mede com textos de verdade (a fonte é monospace); medir várias letras de uma vez evita o erro de arredondamento de medir uma só
+  const medir = (conteudo) => {
+    const t = cena.add.text(0, 0, conteudo, { fontFamily: 'monospace', fontSize, lineSpacing });
+    const medidas = { largura: t.width, altura: t.height };
+    t.destroy();
+    return medidas;
+  };
+  const alturaLinha = medir('M').altura;
+  const passo = medir('M\nM').altura - alturaLinha;
+  const colunas = 13 + RANKING_RESERVA.length;                    // "01. " + nome (8) + espaço + reserva: aqui começa o tempo
+  const larguraChar = medir('M'.repeat(colunas)).largura / colunas;
+  const inicioDoTempo = colunas * larguraChar;
+
+  linhas.forEach((linha, i) => {
+    if (!linha.perfect) return;
+
+    // o nome de verdade, sem os espaços do fim: o carimbo fica no meio entre o fim dele e o começo do tempo
+    const nome = linha.texto.slice(4, 12).trimEnd();
+    const fimDoNome = (4 + nome.length) * larguraChar;
+    const vao = inicioDoTempo - fimDoNome;
+
+    const carimbo = cena.add.container(texto.x + (fimDoNome + inicioDoTempo) / 2, texto.y + i * passo + alturaLinha / 2).setAngle(-8).setDepth(5);
+
+    const palavra = cena.add.text(0, 0, 'PERFECT', {
+      fontFamily: 'monospace',
+      fontSize: '6px',
+      fontStyle: 'bold',
+      color: '#ffd23f',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    const borda = cena.add.graphics();
+    borda.lineStyle(1, 0xffd23f, 1);
+    borda.strokeRect(-palavra.width / 2 - 2, -palavra.height / 2 - 1, palavra.width + 4, palavra.height + 2);
+
+    carimbo.add([borda, palavra]);
+
+    // se o carimbo for maior que o espaço, encolhe para caber sem encostar no nome nem no tempo
+    const larguraCarimbo = palavra.width + 4;
+    if (larguraCarimbo > vao - 3) carimbo.setScale((vao - 3) / larguraCarimbo);
+
+    cena.tweens.add({ targets: carimbo, alpha: 0.35, duration: 450, yoyo: true, repeat: -1 });
+    selos.push(carimbo);
+  });
+
+  return selos;
 }
