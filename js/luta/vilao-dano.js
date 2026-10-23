@@ -205,7 +205,7 @@ class LutaVilaoDano {
 
     // se o vilão estava no ar (pisão), ele cai antes da animação de morte
     this.vilaoNoAr = false;
-    this.vilao.y = CHAO_Y;
+    this.vilao.y = CHAO_Y + (this.cfg.descerVilao || 0);
 
     // impacto: flash, tremor, câmera lenta e zoom no vilão
     const cam = this.cameras.main;
@@ -215,10 +215,12 @@ class LutaVilaoDano {
     cam.zoomTo(1.5, 500);
     cam.pan(Phaser.Math.Clamp(this.vilao.x, 171, 341), 148, 500);
 
-    // mostra o K.O. (som e texto) e vai para o ranking
     const mostrarKO = () => {
       tocarSom(this, 'ko');
-      this.add.text(256, 90, 'K.O.!!!!', {
+
+      // sem ter levado nenhum dano na luta: o K.O. sobe um pouco e o PERFECT! aparece embaixo dele
+      const perfeito = !this.heroiLevouDano;
+      this.add.text(256, perfeito ? 76 : 90, 'K.O.!!!!', {
         fontFamily: 'monospace',
         fontSize: '44px',
         fontStyle: 'bold',
@@ -226,6 +228,17 @@ class LutaVilaoDano {
         stroke: '#000000',
         strokeThickness: 6
       }).setOrigin(0.5).setDepth(30);
+
+      if (perfeito) {
+        this.add.text(256, 116, 'PERFECT!', {
+          fontFamily: 'monospace',
+          fontSize: '20px',
+          fontStyle: 'bold',
+          color: '#ffd23f',
+          stroke: '#000000',
+          strokeThickness: 5
+        }).setOrigin(0.5).setDepth(30);
+      }
 
       const irParaRanking = () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta });
 

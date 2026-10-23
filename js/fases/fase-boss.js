@@ -34,7 +34,7 @@ const FASE_BOSS = {
   margemCorpo: 75,            // o boss é enorme: o herói fica longe do centro dele
   alturaPassagem: 999,        // o herói não consegue pular por cima do boss
   idleAnimado: true,          // parado, ele fica respirando (idle animado) em vez de congelar no quadro 0
-
+  descerVilao: 18,            // pixels que o boss desce no cenário (os pés ficam abaixo dos pés do herói), para o soco dele chegar na altura do herói; máximo ~19, senão os pés cortam na borda da tela
   // origem vertical (0 a 1) por textura: frames 128x128 com os pés em y=107
   // (na morte o corpo deitado fica uns pixels mais baixo; se o corpo afundar no chão, diminua o valor)
   origemY: {
@@ -75,10 +75,11 @@ const FASE_BOSS = {
       distanciaMin: 170,      // só atira com o herói pelo menos tão longe
       velocidade: 220,        // pixels por segundo
       saidaX: 117,            // pixels à frente do centro do boss, onde fica a mão no arremesso
-      alturaInicial: 60,      // altura da bola saindo da mão
+      alturaInicial: 42,      // altura da bola saindo da mão
       alturaFinal: 36,        // altura do peito do herói
       descida: 140,           // pixels de voo até chegar na altura final
       raio: 18,               // distância horizontal do herói para a bola acertar
+      tamanho: 2,             // tamanho da bola (1 = pequena, 2 = o dobro)
       desviaCom: ['pulo', 'agachar']   // desviada pulando ou agachando
     }
   },
@@ -255,7 +256,7 @@ const FASE_BOSS = {
     cena.vilao.clearTint();
     if (cena.vilao.postFX) cena.vilao.postFX.clear();
     cena.vilao.setAlpha(1);
-    cena.vilao.y = CHAO_Y;
+    cena.vilao.y = CHAO_Y + this.descerVilao;
     cena.limparTiros();
     cena.limparBolas();
 
@@ -480,10 +481,11 @@ const FASE_BOSS_2 = {
       distanciaMin: 170,
       velocidade: 240,
       saidaX: 117,
-      alturaInicial: 60,
+      alturaInicial: 42,
       alturaFinal: 36,
       descida: 140,
       raio: 18,
+      tamanho: 2,
       desviaCom: ['pulo', 'agachar']
     }
   },

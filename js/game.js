@@ -76,7 +76,7 @@ class CenaLuta extends Phaser.Scene {
     this.combo = 0;              // quantos ataques seguidos o herói encadeou
     this.comboAte = 0;           // até quando o próximo ataque ainda entra no combo (ms)
 
-    this.vilao = this.add.sprite(this.cfg.inicioVilao || 360, CHAO_Y, this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
+    this.vilao = this.add.sprite(this.cfg.inicioVilao || 360, CHAO_Y + (this.cfg.descerVilao || 0), this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
     this.vilao.setVisible(!comEntrada);
 
@@ -108,6 +108,8 @@ class CenaLuta extends Phaser.Scene {
     this.golpeAtualNome = null;
 
     this.heroiVida = VIDA_HEROI;
+    // PERFECT: vira true assim que o herói leva qualquer dano; já começa true se a luta recomeça direto na fase 2 do boss (a luta inteira não foi jogada)
+    this.heroiLevouDano = !!this.cfg.recomecarAqui;
     this.vilaoVida = this.cfg.vida;
     this.vilaoVidaMax = this.cfg.vida;
     this.fimDeJogo = false;
@@ -276,7 +278,7 @@ class CenaLuta extends Phaser.Scene {
       this.vilaoAltura -= this.vilaoVelY * (delta / 1000);
       if (this.vilaoAltura <= 0) this.vilaoAterrissa();
     }
-    this.vilao.y = CHAO_Y - this.vilaoAltura;
+    this.vilao.y = CHAO_Y + (this.cfg.descerVilao || 0) - this.vilaoAltura;
 
     // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
     // A velocidade, as distâncias e os golpes vêm da fase de cada vilão

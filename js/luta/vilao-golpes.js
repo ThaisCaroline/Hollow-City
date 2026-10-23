@@ -110,11 +110,12 @@ class LutaVilaoGolpes {
 
   // a bola de fogo sai da mão do vilão (no quadro do arremesso) e voa para o lado do herói
   vilaoDisparaBola(g, dir) {
+    const tam = g.tamanho || 1;   // multiplicador do tamanho da bola (1 = o tamanho antigo)
     const bola = this.add.graphics().setDepth(16);
     bola.fillStyle(0xff8a00, 1);
-    bola.fillCircle(0, 0, 8);
+    bola.fillCircle(0, 0, 8 * tam);
     bola.fillStyle(0xffe08a, 1);
-    bola.fillCircle(0, 0, 4);
+    bola.fillCircle(0, 0, 4 * tam);
 
     const x = this.vilao.x + dir * g.saidaX;
     bola.setPosition(x, CHAO_Y - g.alturaInicial);

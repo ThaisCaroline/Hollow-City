@@ -192,6 +192,7 @@ class LutaHeroi {
 
   danoNoHeroi(dano) {
     tocarSom(this, 'dano');
+    this.heroiLevouDano = true;   // tira o PERFECT desta luta (luta/vilao-dano.js)
 
     this.heroiVida = Math.max(0, this.heroiVida - dano);
     desenharBarras(this);
