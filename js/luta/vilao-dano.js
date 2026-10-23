@@ -240,7 +240,7 @@ class LutaVilaoDano {
         }).setOrigin(0.5).setDepth(30);
       }
 
-      const irParaRanking = () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta });
+      const irParaRanking = () => this.scene.start('RankingFase', { fase: this.fase, tempo: this.tempoLuta, perfeito: perfeito });
 
       // nas lutas que deixam um item (poção, soco inglês) o ranking só entra quando o jogador toca; nas outras, 2 s depois
       if (this.deveDroparItem()) this.esperarToque(irParaRanking);

@@ -241,7 +241,8 @@ class CenaLuta extends Phaser.Scene {
       fase: this.fase + 1,                          // luta 1, 2, 3 ou 4
       tempo: Number(this.tempoLuta.toFixed(2)),     // em segundos
       data: new Date(),                             // data e hora da vitória
-      runId: this.game.runId || null                // liga este tempo à run completa
+      runId: this.game.runId || null,               // liga este tempo à run completa
+      perfect: !this.heroiLevouDano                 // true se venceu sem levar dano (o selo PERFECT do ranking)
     }).catch((erro) => console.error('Erro ao salvar ranking:', erro));
   }
 

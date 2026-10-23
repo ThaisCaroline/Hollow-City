@@ -42,10 +42,17 @@ class TelaInicial extends Phaser.Scene {
     // piscando, para chamar o jogador para tocar
     this.tweens.add({ targets: aviso, alpha: 0.2, duration: 600, yoyo: true, repeat: -1 });
 
-    this.add.text(256, 176, 'ARROWS: MOVE   SPACE: JUMP   Z: PUNCH', {
+    // legenda dos comandos: no teclado, todos; no celular (sem teclado), uma dica dos botões na tela
+    const ehCelular = !this.sys.game.device.os.desktop;
+    const legenda = ehCelular
+      ? 'USE THE ON-SCREEN BUTTONS\nLEFT: MOVE   RIGHT: JUMP AND ATTACK'
+      : 'ARROWS: MOVE   UP / SPACE: JUMP   DOWN: CROUCH\nZ: PUNCH   X: SHOOT   C: POTION';
+    this.add.text(256, 174, legenda, {
       fontFamily: 'monospace',
       fontSize: '8px',
-      color: '#cccccc'
+      color: '#cccccc',
+      align: 'center',
+      lineSpacing: 3
     }).setOrigin(0.5);
 
     // botão de rankings, na parte de baixo da tela

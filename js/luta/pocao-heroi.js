@@ -25,7 +25,7 @@ const POCAO_AVISO = 'TAP OR ENTER TO CONTINUE';
 const POCAO_USO_QUADRO_CURA = 3;      // a cura sai no quadro 4 (índice 3), quando a garrafa chega à boca
 const POCAO_USO_FPS = 8;
 const POCAO_USO_TOTAL_MS = 750;       // duração da animação: o botão só libera depois disso
-const POCAO_BOTAO = { x: 86, y: 46 }; // o ícone fica ao lado do AMMO (o contador xN fica à direita dele)
+const POCAO_BOTAO = { x: 28, y: 79, r: 18 }; // botão redondo da poção, embaixo do AMMO (mesmo estilo dos botões de toque; o contador xN fica à direita dele)
 
 class LutaPocaoHeroi {
   // carrega as imagens dos itens que ficam no chão (chamado pelo preload da cena de luta)
@@ -36,7 +36,8 @@ class LutaPocaoHeroi {
 
   // o ícone da poção perto das munições, com o contador xN; tocar nele usa a poção (a tecla C também)
   criarBotaoPocao() {
-    this.pocoes = this.cfg.pocaoHeroi ? (this.cfg.pocoes || 1) : 0;   // poções por tentativa (voltam se o herói perder e tentar de novo)    this.heroiBebendo = false;
+    this.pocoes = this.cfg.pocaoHeroi ? (this.cfg.pocoes || 1) : 0;   // poções por tentativa (voltam se o herói perder e tentar de novo)
+    this.heroiBebendo = false;
     this.curaHeroiBrilho = false;     // true durante o brilho verde da poção (a barra de vida lê isto)
     this.curaHeroiPiscaOn = false;
     this.heroiVidaAntesCura = 0;
@@ -44,8 +45,10 @@ class LutaPocaoHeroi {
     this.textoPocao = null;
     if (!this.cfg.pocaoHeroi) return;
 
-    this.iconePocao = this.add.image(POCAO_BOTAO.x, POCAO_BOTAO.y, 'icone-pocao-chao').setDepth(21);
-    this.textoPocao = this.add.text(POCAO_BOTAO.x + 12, POCAO_BOTAO.y - 8, '', {
+    // botão redondo no mesmo estilo dos botões de toque (soco, tiro): fundo verde translúcido, contorno fino e o ícone por cima
+    botaoToque(this, POCAO_BOTAO, 0x4cff6a, 'pocao');
+    this.iconePocao = this.add.image(POCAO_BOTAO.x, POCAO_BOTAO.y, 'icone-pocao-chao').setDepth(11);
+    this.textoPocao = this.add.text(POCAO_BOTAO.x + POCAO_BOTAO.r + 6, POCAO_BOTAO.y - 8, '', {
       fontFamily: 'monospace',
       fontSize: '14px',
       fontStyle: 'bold',
@@ -53,10 +56,6 @@ class LutaPocaoHeroi {
       stroke: '#000000',
       strokeThickness: 3
     }).setDepth(21);
-
-    // área de toque maior que o ícone, para o dedo acertar
-    const zona = this.add.zone(POCAO_BOTAO.x + 8, POCAO_BOTAO.y, 56, 34).setInteractive().setDepth(22);
-    zona.on('pointerdown', () => { this.toque.pocao = true; });
 
     this.atualizarPocoes();
   }
@@ -66,7 +65,7 @@ class LutaPocaoHeroi {
     if (!this.textoPocao) return;
     this.textoPocao.setText('x' + this.pocoes);
     const gasta = this.pocoes <= 0;
-    this.iconePocao.setAlpha(gasta ? 0.3 : 1);
+    this.iconePocao.setAlpha(gasta ? 0.3 : 0.9);   // 0.9 como os outros ícones dos botões
     this.textoPocao.setAlpha(gasta ? 0.4 : 1);
   }
 

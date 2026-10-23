@@ -41,7 +41,7 @@ class Rankings extends Phaser.Scene {
       return aba;
     });
 
-    const estilo = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', lineSpacing: 4 };
+    const estilo = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', lineSpacing: RANKING_ESPACO };
     this.lista1 = this.add.text(16, 66, '', estilo).setOrigin(0, 0);
     this.lista2 = this.add.text(262, 66, '', estilo).setOrigin(0, 0);
 
@@ -89,14 +89,25 @@ class Rankings extends Phaser.Scene {
     });
 
     const linhas = this.abaAtual === 0 ? this.linhasGeral() : this.linhasFase(this.abaAtual);
+
+    // apaga os PERFECT da aba anterior
+    (this.selos || []).forEach((s) => { this.tweens.killTweensOf(s); s.destroy(); });
+    this.selos = [];
+
     if (linhas.length === 0) {
       this.lista1.setText('NO RECORDS YET');
       this.lista2.setText('');
       return;
     }
 
-    this.lista1.setText(linhas.slice(0, 8).join('\n'));
-    this.lista2.setText(linhas.slice(8, 15).join('\n'));
+    this.lista1.setText(linhas.slice(0, 8).map((l) => l.texto).join('\n'));
+    this.lista2.setText(linhas.slice(8, 15).map((l) => l.texto).join('\n'));
+
+    // o carimbo PERFECT, amarelo e piscando, ao lado do nome das linhas sem dano (na aba FULL RUN, só as runs com as 4 lutas sem dano)
+    this.selos = [
+      ...selosPerfect(this, this.lista1, linhas.slice(0, 8), '8px', RANKING_ESPACO),
+      ...selosPerfect(this, this.lista2, linhas.slice(8, 15), '8px', RANKING_ESPACO)
+    ];
   }
 
   // top 15 de uma fase, pelo menor tempo
@@ -105,7 +116,10 @@ class Rankings extends Phaser.Scene {
       .filter((r) => r.fase === fase)
       .sort((a, b) => a.tempo - b.tempo)
       .slice(0, 15)
-      .map((r, i) => `${String(i + 1).padStart(2)}. ${r.nome.slice(0, 8).padEnd(8)} ${formatarTempo(r.tempo)} ${dataCurta(r.data)}`);
+      .map((r, i) => ({
+        texto: `${String(i + 1).padStart(2)}. ${r.nome.slice(0, 8).padEnd(8)} ${RANKING_RESERVA}${formatarTempo(r.tempo)} ${dataCurta(r.data)}`,
+        perfect: r.perfect === true
+      }));
   }
 
   // top 15 de runs completas: soma do melhor tempo de cada uma das 4 fases
@@ -115,8 +129,11 @@ class Rankings extends Phaser.Scene {
     this.dados.forEach((r) => {
       if (!r.runId || !r.fase) return; // registros antigos, sem runId, não entram no geral
 
-      const run = runs[r.runId] || (runs[r.runId] = { nome: r.nome, data: r.data, tempos: {} });
-      if (run.tempos[r.fase] === undefined || r.tempo < run.tempos[r.fase]) run.tempos[r.fase] = r.tempo;
+      const run = runs[r.runId] || (runs[r.runId] = { nome: r.nome, data: r.data, tempos: {}, perfeitos: {} });
+      if (run.tempos[r.fase] === undefined || r.tempo < run.tempos[r.fase]) {
+        run.tempos[r.fase] = r.tempo;
+        run.perfeitos[r.fase] = r.perfect === true;   // a luta que vale para o geral foi sem dano?
+      }
       if (r.data && r.data.toMillis && (!run.data || run.data.toMillis() < r.data.toMillis())) run.data = r.data;
     });
 
@@ -128,7 +145,10 @@ class Rankings extends Phaser.Scene {
 
     return completas
       .slice(0, 15)
-      .map((run, i) => `${String(i + 1).padStart(2)}. ${run.nome.slice(0, 8).padEnd(8)} ${formatarCronometro(run.total * 1000)} ${dataCurta(run.data)}`);
+      .map((run, i) => ({
+        texto: `${String(i + 1).padStart(2)}. ${run.nome.slice(0, 8).padEnd(8)} ${RANKING_RESERVA}${formatarCronometro(run.total * 1000)} ${dataCurta(run.data)}`,
+        perfect: [1, 2, 3, 4].every((f) => run.perfeitos[f])   // as 4 lutas da run foram sem dano
+      }));
   }
 
   voltar() {

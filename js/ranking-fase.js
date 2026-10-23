@@ -8,6 +8,7 @@ class RankingFase extends Phaser.Scene {
   init(data) {
     this.fase = data.fase;     // índice da luta vencida (0 = primeira)
     this.tempo = data.tempo;   // tempo da luta em segundos
+    this.perfeito = !!data.perfeito;   // venceu sem levar dano
     this.saindo = false;
     this.game.progresso = Math.max(this.game.progresso || 0, this.fase + 1);
   }
@@ -26,11 +27,22 @@ class RankingFase extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5, 0);
 
-    this.add.text(256, 40, `YOUR TIME: ${formatarTempo(this.tempo)}`, {
+    const textoTempo = this.add.text(256, 40, `YOUR TIME: ${formatarTempo(this.tempo)}`, {
       fontFamily: 'monospace',
       fontSize: '11px',
       color: '#ffffff'
     }).setOrigin(0.5, 0);
+
+    // sem ter levado dano na luta: PERFECT! amarelo e piscando ao lado do tempo
+    if (this.perfeito) {
+      const perfect = this.add.text(textoTempo.x + textoTempo.width / 2 + 8, 40, 'PERFECT!', {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        color: '#ffd23f'
+      }).setOrigin(0, 0);
+      this.tweens.add({ targets: perfect, alpha: 0.25, duration: 450, yoyo: true, repeat: -1 });
+    }
 
     this.add.text(256, 60, `TOP 15 - FIGHT ${numero}`, {
       fontFamily: 'monospace',
@@ -40,14 +52,14 @@ class RankingFase extends Phaser.Scene {
 
     const estilo = {
       fontFamily: 'monospace',
-      fontSize: '9px',
+      fontSize: '8px',
       color: '#ffffff',
-      lineSpacing: 4
+      lineSpacing: RANKING_ESPACO
     };
 
     // duas colunas: 1 a 8 à esquerda, 9 a 15 à direita
-    this.listaEsq = this.add.text(16, 80, 'LOADING...', estilo).setOrigin(0, 0);
-    this.listaDir = this.add.text(262, 80, '', estilo).setOrigin(0, 0);
+    this.listaEsq = this.add.text(16, 74, 'LOADING...', estilo).setOrigin(0, 0);
+    this.listaDir = this.add.text(262, 74, '', estilo).setOrigin(0, 0);
 
     this.carregarRanking(numero);
 
@@ -85,11 +97,16 @@ class RankingFase extends Phaser.Scene {
           return;
         }
 
-        const linhas = melhores.map((r, i) =>
-          `${String(i + 1).padStart(2)}. ${r.nome.slice(0, 8).padEnd(8)} ${formatarTempo(r.tempo)} ${this.formatarData(r.data)}`
-        );
-        this.listaEsq.setText(linhas.slice(0, 8).join('\n'));
-        this.listaDir.setText(linhas.slice(8).join('\n'));
+        const linhas = melhores.map((r, i) => ({
+          texto: `${String(i + 1).padStart(2)}. ${r.nome.slice(0, 8).padEnd(8)} ${RANKING_RESERVA}${formatarTempo(r.tempo)} ${this.formatarData(r.data)}`,
+          perfect: r.perfect === true
+        }));
+        this.listaEsq.setText(linhas.slice(0, 8).map((l) => l.texto).join('\n'));
+        this.listaDir.setText(linhas.slice(8).map((l) => l.texto).join('\n'));
+
+        // o carimbo PERFECT, amarelo e piscando, ao lado do nome das vitórias sem dano
+        selosPerfect(this, this.listaEsq, linhas.slice(0, 8), '8px', RANKING_ESPACO);
+        selosPerfect(this, this.listaDir, linhas.slice(8), '8px', RANKING_ESPACO);
       })
       .catch(() => this.listaEsq.setText('ERROR LOADING RANKING'));
   }
