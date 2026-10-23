@@ -7,7 +7,9 @@
 //   chao: imagem do item no chão | animacao: animação do herói pegando | brilho: cor do anel no chão
 const ITENS_DA_LUTA = {
   0: { chao: 'icone-pocao-chao', animacao: 'heroi-pegar', brilho: 0x4cff6a },              // poção (criatura)
-  1: { chao: 'icone-soco-ingles-chao', animacao: 'heroi-pegar-soco', brilho: 0xdfe6ee }    // soco inglês (ogro)
+  1: { chao: 'icone-soco-ingles-chao', animacao: 'heroi-pegar-soco', brilho: 0xdfe6ee },   // soco inglês (ogro)
+  // balas de prata (lobisomem); por enquanto reaproveita a animação de pegar o soco inglês (o objeto na mão é prateado também)
+  2: { chao: 'icone-balas-prata-chao', animacao: 'heroi-pegar-soco', brilho: 0xe8eef6 }
 };
 
 const POCAO_DISTANCIA_CORPO = 30;     // px: onde o item cai, contando do corpo, do lado do herói
@@ -32,6 +34,7 @@ class LutaPocaoHeroi {
   carregarItensHeroi() {
     this.load.image('icone-pocao-chao', 'assets/icones/icone_pocao_chao.png');
     this.load.image('icone-soco-ingles-chao', 'assets/icones/icone_soco_ingles_chao.png');
+    this.load.image('icone-balas-prata-chao', 'assets/icones/icone_balas_prata_chao.png');
   }
 
   // o ícone da poção perto das munições, com o contador xN; tocar nele usa a poção (a tecla C também)

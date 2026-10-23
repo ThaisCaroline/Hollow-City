@@ -21,10 +21,21 @@ const DANO_SOCO_INGLES_VIRADA = 55;   // dano do soco com o soco inglês no modo
 const DANO_CHUTE_INGLES = 50;         // dano do chute (3º golpe do combo) com o soco inglês
 const DANO_CHUTE_INGLES_VIRADA = 60;  // dano do chute com o soco inglês no modo virada
 
+// balas de prata: o lobisomem deixa cair na luta 3 e valem a partir da luta 4 (também só pelo número da luta)
+const BALAS_PRATA_LUTA = 3;           // índice da primeira luta com as balas de prata (3 = a luta 4, o boss)
+const DANO_TIRO_PRATA = 1.5;          // o tiro tira 50% a mais (no boss: 65 vira 98)
+const COR_BALA = 0xffd23f;            // bala comum: amarela
+const COR_BALA_PRATA = 0xe8eef6;      // bala de prata
+
 class LutaHeroi {
   // o herói já está com o soco inglês nesta luta?
   temSocoIngles() {
     return this.fase >= SOCO_INGLES_LUTA;
+  }
+
+  // o herói já está com as balas de prata nesta luta?
+  temBalasPrata() {
+    return this.fase >= BALAS_PRATA_LUTA;
   }
 
   // dano do chute: sem o soco inglês é sempre 20; com ele, 30 (35 no modo virada)
@@ -49,6 +60,7 @@ class LutaHeroi {
     this.load.spritesheet('heroi-beber', 'assets/heroi/heroi_beber_pocao.png', tamanho);
     this.load.image('icone-soco', 'assets/icones/icone_soco.png');
     this.load.image('icone-tiro', 'assets/icones/icone_tiro.png');
+    this.load.image('icone-tiro-prata', 'assets/icones/icone_tiro_prata.png');
     this.load.image('icone-soco-ingles', 'assets/icones/icone_soco_ingles.png');
   }
 
@@ -142,7 +154,7 @@ class LutaHeroi {
 
   criarBala(x, dir) {
     const g = this.add.graphics().setDepth(12);
-    g.fillStyle(0xffd23f, 1);
+    g.fillStyle(this.temBalasPrata() ? COR_BALA_PRATA : COR_BALA, 1);
     g.fillRect(-6, -2, 12, 4);
     g.setPosition(x, CHAO_Y - this.cfg.tiro.alturaDisparo);
     this.tiros.push({ g, dir, vel: this.cfg.tiro.velocidade });
@@ -164,7 +176,8 @@ class LutaHeroi {
 
       if (naMira && noChao && this.emCombate && !this.vilaoEsquivando && !this.fimDeJogo) {
         t.g.destroy();
-        this.danoNoVilao(cfg.dano, this.cfg.sons.dano);
+        const dano = this.temBalasPrata() ? Math.round(cfg.dano * DANO_TIRO_PRATA) : cfg.dano;
+        this.danoNoVilao(dano, this.cfg.sons.dano);
         continue;
       }
 

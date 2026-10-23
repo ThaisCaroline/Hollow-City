@@ -56,7 +56,7 @@ const SONS_PULO = ['pulo1', 'pulo2', 'pulo3'];
 const LUTAS = [
   { nome: 'WITCH' },
   { nome: 'OGRE' },
-  { nome: 'WITCH' },
+  { nome: 'WEREWOLF' },
   { nome: 'OGRE' }
 ];
 
