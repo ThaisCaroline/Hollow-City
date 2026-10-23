@@ -1,6 +1,6 @@
 // Fase 3: o lobisomem. Tudo que é dele fica aqui: textos, cenário, sons, sprites, animações, golpes, vida e movimento.
 // Sprites: "Free Werewolf Sprite Pixel Characters" (Black Werewolf), da CraftPix; licença em assets/lobisomem/LICENCA.txt.
-// Anda, dá a garrada (desvia agachando), faz a investida (desvia pulando), entra na fúria com metade da vida, apanha e morre.
+// Anda, dá a garrada (desvia agachando), faz a investida (desvia pulando), bloqueia e contra-ataca, entra na fúria com metade da vida, apanha e morre.
 // Os valores de vida, dano e alcance são um chute inicial: ajuste depois do teste.
 
 const FASE3 = {
@@ -14,7 +14,7 @@ const FASE3 = {
   cenarioChave: 'cenario',
 
   // vida, tamanho e movimento do vilão
-  vida: 400,
+  vida: 900,
   escala: 1.1,               // ponto de partida; ajuste depois do teste
   espelhado: false,          // o sprite do lobisomem nasce virado para a direita
   velocidade: 55,            // pixels por segundo; mais rápido que o ogro (35) e a criatura (50)
@@ -27,6 +27,7 @@ const FASE3 = {
   // origem vertical (0 a 1) por textura: frames de 128x128 com os pés na base do quadro
   origemY: {
     'lobisomem-andar': 1,
+    'lobisomem-idle': 1,
     'lobisomem-garra': 1,
     'lobisomem-investida': 1,
     'lobisomem-correr': 1,
@@ -41,7 +42,7 @@ const FASE3 = {
   golpes: {
     intervalo: 1200,         // um ataque a cada 1,2 segundo
     corpo: {
-      dano: 25,
+      dano: 35,
       alcance: 65,
       desviaCom: 'agachar',
       aviso: 500,            // aviso laranja de 0,5 s (a animação a 6 fps chega no quadro do corte nesse tempo)
@@ -51,15 +52,15 @@ const FASE3 = {
     // investida: depois do aviso, ele dispara correndo, atravessa o herói e para do outro lado.
     // O herói desvia pulando quando ele passa; no chão, leva o dano
     investida: {
-      dano: 30,
+      dano: 40,
       desviaCom: 'pulo',
       aviso: 600,            // aviso laranja de 0,6 s, agachado para arrancar
       velocidade: 320,       // pixels por segundo na corrida
       passarDoHeroi: 90,     // pixels que ele corre depois de passar pelo herói
       distanciaMin: 130,     // de longe, investe sempre que puder (a essa distância ou mais)
-      chancePerto: 0.3,      // de perto, chance de investir em vez de dar a garrada
-      primeira: 3000,        // ms: a primeira investida só fica disponível depois disso
-      cooldown: 5000         // ms até ele poder investir de novo
+      chancePerto: 0.45,     // de perto, chance de investir em vez de dar a garrada
+      primeira: 2000,        // ms: a primeira investida só fica disponível depois disso
+      cooldown: 2800         // ms até ele poder investir de novo
     }
   },
 
@@ -99,12 +100,24 @@ const FASE3 = {
   // o lobisomem não esquiva
   esquiva: false,
 
+  // bloqueio: com o herói perto, ele se encolhe na pose agachada (sem sheet de defesa no pacote, usa o idle).
+  // Soco e chute não causam dano (aparece BLOCKED); o tiro passa. Logo depois vem a garrada de contra-ataque, mais forte
+  bloqueio: {
+    primeiro: 4000,     // ms: o primeiro bloqueio só fica disponível depois disso
+    intervalo: 6000,    // ms entre um bloqueio e o seguinte (na fúria, 30% menos)
+    duracao: 1200,      // ms encolhido, antes da garrada
+    contra: 'corpo',    // golpe do contra-ataque: a garrada
+    contraDano: 50,     // dano da garrada logo depois do bloqueio (a normal tira 35)
+    textura: 'lobisomem-idle'
+  },
+
   // imagem que aparece na caixa de diálogo
   retrato: { chave: 'lobisomem-andar', frame: 0, escala: 0.55 },
 
   // arquivos dos sprites do lobisomem (pasta assets/lobisomem), todos com frames de 128x128
   sprites: {
     andar: 'assets/lobisomem/lobisomem_andar.png',
+    idle: 'assets/lobisomem/lobisomem_idle.png',
     garra: 'assets/lobisomem/lobisomem_garra.png',
     investida: 'assets/lobisomem/lobisomem_investida.png',
     correr: 'assets/lobisomem/lobisomem_correr.png',
@@ -119,6 +132,7 @@ const FASE3 = {
   texturas: {
     parado: 'lobisomem-andar',
     andar: 'lobisomem-andar',
+    idle: 'lobisomem-idle',
     ataque: 'lobisomem-garra',
     investida: 'lobisomem-investida',
     correr: 'lobisomem-correr',
@@ -131,6 +145,7 @@ const FASE3 = {
     andar: 'lobisomem-andar',
     ataque: 'lobisomem-ataque',
     investidaPreparar: 'lobisomem-investida-preparar',
+    bloqueio: 'lobisomem-bloqueio',
     correr: 'lobisomem-correr',
     hit: 'lobisomem-hit',
     morte: 'lobisomem-morte'
@@ -143,6 +158,7 @@ const FASE3 = {
     const tamanho = { frameWidth: S.largura, frameHeight: S.altura };
 
     cena.load.spritesheet(T.andar, S.andar, tamanho);
+    cena.load.spritesheet(T.idle, S.idle, tamanho);
     cena.load.spritesheet(T.ataque, S.garra, tamanho);
     cena.load.spritesheet(T.investida, S.investida, tamanho);
     cena.load.spritesheet(T.correr, S.correr, tamanho);
@@ -186,6 +202,14 @@ const FASE3 = {
       key: A.correr,
       frames: cena.anims.generateFrameNumbers(T.correr, { start: 0, end: 8 }),
       frameRate: 16,
+      repeat: -1
+    });
+
+    // bloqueio: os 8 quadros do idle (encolhido, respirando) em loop até o fim do bloqueio
+    cena.anims.create({
+      key: A.bloqueio,
+      frames: cena.anims.generateFrameNumbers(T.idle, { start: 0, end: 7 }),
+      frameRate: 10,
       repeat: -1
     });
 

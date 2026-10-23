@@ -296,18 +296,21 @@ class LutaVilaoGolpes {
     return perto && this.time.now >= this.vilaoProximoBloqueio;
   }
 
-  // bloqueio: braços cruzados por um tempo (soco e chute não causam dano, o tiro passa) e, logo depois, o pisão mais forte
+  // bloqueio: braços cruzados por um tempo (soco e chute não causam dano, o tiro passa) e, logo depois, o contra-golpe mais forte
+  // (o pisão no ogro; a fase escolhe outro golpe com bloqueio.contra, como a garrada do lobisomem)
   vilaoBloquear() {
     const b = this.cfg.bloqueio;
+    const contra = b.contra || 'pisao';
     this.vilaoBloqueando = true;
-    this.vilaoProximoBloqueio = this.time.now + b.intervalo;
+    this.vilaoProximoBloqueio = this.time.now + b.intervalo * this.multFuria('intervalo');
     this.vilao.clearTint();
     this.vilao.play(this.cfg.anims.bloqueio);
+    if (b.textura) this.ajustarOrigemVilao(b.textura);
 
     this.time.delayedCall(b.duracao, () => {
       if (this.fimDeJogo) return;
       this.vilaoBloqueando = false;
-      this.vilaoAtacar({ nome: 'pisao', golpe: { ...this.cfg.golpes.pisao, dano: b.pisaoDano } });
+      this.vilaoAtacar({ nome: contra, golpe: { ...this.cfg.golpes[contra], dano: b.contraDano || b.pisaoDano } });
     });
   }
 
