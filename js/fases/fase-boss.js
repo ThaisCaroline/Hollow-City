@@ -87,7 +87,7 @@ const FASE_BOSS = {
   // golpes do herói disponíveis nesta luta (o herói mantém o que aprendeu contra o ogro)
   agachar: true,              // seta para baixo / botão azul
   tiro: {
-    municao: 12,
+    municao: 10,
     dano: 65,
     velocidade: 300,          // pixels por segundo
     altura: 8,
@@ -104,7 +104,7 @@ const FASE_BOSS = {
 
   // o herói tem uma poção de cura nesta luta (botão perto das munições e a tecla C)
   pocaoHeroi: true,
-  pocoes: 3,                  // quantas poções o herói tem nesta luta
+  pocoes: 2,                  // quantas poções o herói tem nesta luta
 
   // imagem que aparece na caixa de diálogo (a foto única da cutscene; sem frames)
   retrato: { chave: 'boss-thumb', frame: '__BASE', escala: 0.17 },
