@@ -47,6 +47,25 @@ const SONS = {
   'musica-luta': 'assets/audio/musica-luta.mp3',
   'ogro-dano': 'assets/audio/orc-grunt.wav',
   'tiro': 'assets/audio/tiro.wav',
+
+  // lobo
+  'lobo-garrada': 'assets/audio/whoosh slash.WAV',
+  'lobo-investida': 'assets/audio/werewolf growl.WAV',
+  'lobo-entrada': 'assets/audio/uivolobo1.WAV',
+  'lobo-furia': 'assets/audio/furiaLobo.WAV',
+  'lobo-morte': 'assets/audio/werewolf death.wav',
+
+  // arma sem munição
+  'sem-municao': 'assets/audio/empty gun click.flac',
+
+  // boss
+  'boss-bola': 'assets/audio/fireball.wav',
+  'boss-dano': 'assets/audio/hurtboss.WAV',
+  'boss-morte': 'assets/audio/monster death deep.wav',
+  'boss-powerup': 'assets/audio/power-upboss.WAV',
+
+  // PERFECT (todas as lutas)
+  'perfect': 'assets/audio/perfect.ogg',
 };
 
 // sons de pulo, sorteados a cada pulo

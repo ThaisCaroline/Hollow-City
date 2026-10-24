@@ -11,6 +11,7 @@ class RankingFase extends Phaser.Scene {
     this.perfeito = !!data.perfeito;   // venceu sem levar dano
     this.saindo = false;
     this.game.progresso = Math.max(this.game.progresso || 0, this.fase + 1);
+    if (this.game.desistidas) delete this.game.desistidas[this.fase];   // venceu uma luta que tinha pulado: agora ela conta como vencida
   }
 
   create() {
@@ -87,10 +88,10 @@ class RankingFase extends Phaser.Scene {
   carregarRanking(numero) {
     db.collection('ranking').where('fase', '==', numero).get()
       .then((snap) => {
-        const melhores = snap.docs
+        const todos = snap.docs
           .map((doc) => doc.data())
-          .sort((a, b) => a.tempo - b.tempo)
-          .slice(0, 15);
+          .sort((a, b) => a.tempo - b.tempo);
+        const melhores = todos.slice(0, 15);
 
         if (melhores.length === 0) {
           this.listaEsq.setText('NO RECORDS YET');
@@ -107,8 +108,30 @@ class RankingFase extends Phaser.Scene {
         // o carimbo PERFECT, amarelo e piscando, ao lado do nome das vitórias sem dano
         selosPerfect(this, this.listaEsq, linhas.slice(0, 8), '8px', RANKING_ESPACO);
         selosPerfect(this, this.listaDir, linhas.slice(8), '8px', RANKING_ESPACO);
+
+        // se o tempo do jogador ficou fora do top 15, a posição dele aparece no fim da lista (só nesta tela; nada é gravado)
+        const meuTempo = Number(this.tempo.toFixed(2));   // o mesmo valor que foi gravado no ranking
+        const posicao = todos.filter((r) => r.tempo < meuTempo).length + 1;
+        if (posicao > 15) this.mostrarPosicao(posicao);
       })
       .catch(() => this.listaEsq.setText('ERROR LOADING RANKING'));
+  }
+
+  // a linha do jogador, em laranja, logo abaixo da coluna da direita: posição real, nome, tempo e a data de hoje
+  mostrarPosicao(posicao) {
+    const nome = (this.game.nomeJogador || 'ANON').slice(0, 8);
+    const hoje = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const y = this.listaDir.y + this.listaDir.height + RANKING_ESPACO;   // a linha seguinte da coluna da direita
+
+    const texto = `${String(posicao).padStart(2)}. ${nome.padEnd(8)} ${RANKING_RESERVA}${formatarTempo(this.tempo)} ${hoje}`;
+    const linha = this.add.text(262, y, texto, {
+      fontFamily: 'monospace',
+      fontSize: '8px',
+      color: '#ff8a00'
+    }).setOrigin(0, 0);
+
+    // o carimbo PERFECT também aparece na linha do jogador, se ele venceu sem levar dano
+    selosPerfect(this, linha, [{ texto, perfect: this.perfeito }], '8px', RANKING_ESPACO);
   }
 
   continuar() {
@@ -118,7 +141,8 @@ class RankingFase extends Phaser.Scene {
     const proximaLuta = this.fase + 1;
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      if (this.fase === 2) this.scene.start('CutsceneBoss');
+      // a cutscene do boss só toca se o jogador ainda não entrou nele (ele pode ter pulado a luta 3 e vencido depois)
+      if (this.fase === 2 && !(this.game.fasesVistas || {})[LUTAS.length - 1]) this.scene.start('CutsceneBoss');
       else if (proximaLuta >= LUTAS.length) this.scene.start('Final');
       else this.scene.start('Mapa', { fase: this.game.progresso });
     });

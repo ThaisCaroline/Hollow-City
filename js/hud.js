@@ -97,7 +97,8 @@ function flutuarTexto(cena, x, y, conteudo) {
   });
 }
 
-// tela de fim: título, subtítulo e botões para jogar de novo ou voltar ao mapa
+// tela de fim: título, subtítulo e botões. PLAY AGAIN maior, no centro; embaixo, BACK TO MAP e TOO HARD? bem separados,
+// dentro da zona livre da tela (os botões de toque ficam nos cantos, então nada de botão colado neles)
 function mostrarFim(cena, titulo, subtitulo, cor) {
   // o título "cai" na tela, grande, e treme a câmera ao bater
   const texto = cena.add.text(256, 70, titulo, {
@@ -129,35 +130,68 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
     cena.tweens.add({ targets: sub, alpha: 1, delay: 500, duration: 400 });
   }
 
-  // botões aparecem depois, um abaixo do outro
-  cena.time.delayedCall(900, () => {
-    const botaoJogar = cena.add.text(256, 135, 'PLAY AGAIN', {
+  // botão de texto com área de toque maior que o desenho (margem invisível de "folga" em volta), para o dedo errar menos
+  const criarBotao = (x, y, rotulo, tamanho, padding, folga) => {
+    const botao = cena.add.text(x, y, rotulo, {
       fontFamily: 'monospace',
-      fontSize: '14px',
+      fontSize: tamanho,
       color: '#ffffff',
       backgroundColor: '#000000',
-      padding: { x: 8, y: 4 }
-    }).setOrigin(0.5).setDepth(30).setInteractive({ useHandCursor: true });
+      padding: padding
+    }).setOrigin(0.5).setDepth(30);
+    botao.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(-folga, -folga, botao.width + folga * 2, botao.height + folga * 2),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      useHandCursor: true
+    });
+    return botao;
+  };
 
-    const botaoMapa = cena.add.text(256, 165, 'BACK TO MAP', {
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 8, y: 4 }
-    }).setOrigin(0.5).setDepth(30).setInteractive({ useHandCursor: true });
+  // botões aparecem depois: PLAY AGAIN em cima, os outros dois embaixo
+  cena.time.delayedCall(900, () => {
+    const botaoJogar = criarBotao(256, 128, 'PLAY AGAIN', '18px', { x: 14, y: 8 }, 10);
+    const botaoMapa = criarBotao(185, 182, 'BACK TO MAP', '12px', { x: 8, y: 7 }, 8);
+    const botaoDesistir = criarBotao(327, 182, 'TOO HARD?', '12px', { x: 8, y: 7 }, 8);
 
     cena.tweens.add({ targets: botaoJogar, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
 
+    let saindo = false;   // evita dois toques seguidos dispararem duas saídas
+
     // jogar de novo: reinicia na mesma luta; se o herói morreu numa fase que pede para recomeçar nela mesma (a fase 2 do boss), volta nela
-    const jogarDeNovo = () => cena.scene.restart({ fase: cena.fase, cfg: cena.cfg.recomecarAqui ? cena.cfg : null });
+    const jogarDeNovo = () => {
+      if (saindo) return;
+      saindo = true;
+      cena.scene.restart({ fase: cena.fase, cfg: cena.cfg.recomecarAqui ? cena.cfg : null });
+    };
     botaoJogar.on('pointerdown', jogarDeNovo);
     cena.input.keyboard.once('keydown-ENTER', jogarDeNovo);
 
     // voltar ao mapa: a luta atual continua como próxima no caminho
-    const voltarMapa = () => cena.scene.start('Mapa', { fase: cena.fase });
+    const voltarMapa = () => {
+      if (saindo) return;
+      saindo = true;
+      cena.scene.start('Mapa', { fase: cena.fase });
+    };
     botaoMapa.on('pointerdown', voltarMapa);
     cena.input.keyboard.once('keydown-ESC', voltarMapa);
+
+    // TOO HARD?: desiste desta luta e segue para a próxima no mapa. A luta fica como CLICK TO ENTER (ainda por vencer)
+    // e a run sai do FULL RUN (runId zerado; os tempos seguintes continuam entrando no ranking de cada luta).
+    // Em luta já vencida (replay) ou já pulada, só volta ao mapa, igual ao BACK TO MAP
+    const desistir = () => {
+      if (saindo) return;
+      saindo = true;
+
+      const jogo = cena.game;
+      if (cena.fase >= (jogo.progresso || 0)) {
+        jogo.desistidas = jogo.desistidas || {};
+        jogo.desistidas[cena.fase] = true;
+        jogo.progresso = cena.fase + 1;
+        jogo.runId = null;
+      }
+      cena.scene.start('Mapa', { fase: jogo.progresso || 0 });
+    };
+    botaoDesistir.on('pointerdown', desistir);
   });
 }
 

@@ -189,6 +189,21 @@ class CenaLuta extends Phaser.Scene {
 
   // o vilão entra pela direita e fala antes da luta
   chegaVilao() {
+    // uivo da entrada (só o lobo tem): toca quando ele começa a entrar, antes do diálogo dele.
+    // O arquivo tem 7,4 s: toca só os primeiros ~3 s, com fade-out (começa em 2,2 s e dura 0,8 s)
+    if (this.cfg.sons && this.cfg.sons.entrada && this.cache.audio.exists(this.cfg.sons.entrada)) {
+      const uivo = this.sound.add(this.cfg.sons.entrada, { volume: 0.9 });
+      uivo.play();
+      this.time.delayedCall(2200, () => {
+        this.tweens.add({
+          targets: uivo,
+          volume: 0,
+          duration: 800,
+          onComplete: () => uivo.destroy()
+        });
+      });
+    }
+
     this.vilao.setVisible(true);
     this.vilao.x = 500;
     this.virarVilao(true); // olha para a esquerda, para o herói

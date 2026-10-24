@@ -53,6 +53,11 @@ class Final extends Phaser.Scene {
     super('Final');
   }
 
+  init(data) {
+    // aberto pelo botão ENDING do mapa: ao terminar, volta para o mapa (e não para a tela inicial)
+    this.voltarPara = (data && data.voltarPara) || null;
+  }
+
   preload() {
     // carrega as imagens dos slides que têm uma
     SLIDES_FINAL.forEach((slide, i) => {
@@ -181,6 +186,9 @@ class Final extends Phaser.Scene {
     this.trocando = true;
     const cam = this.cameras.main;
     cam.fadeOut(600, 0, 0, 0);
-    cam.once('camerafadeoutcomplete', () => this.scene.start('TelaInicial'));
+    cam.once('camerafadeoutcomplete', () => {
+      if (this.voltarPara === 'Mapa') this.scene.start('Mapa', { fase: this.game.progresso || 0 });
+      else this.scene.start('TelaInicial');
+    });
   }
 }

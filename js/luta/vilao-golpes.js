@@ -88,6 +88,9 @@ class LutaVilaoGolpes {
 
   // golpe corpo a corpo: avanço rápido, arco de corte (se a fase quiser) e dano se o herói estiver no alcance
   vilaoGolpeCorpo(g, dir) {
+    // som do golpe, se a fase tiver (o lobo: a garrada; o boss fica sem som, quem toca é o dano do herói)
+    if (this.cfg.sons && this.cfg.sons.garrada) tocarSom(this, this.cfg.sons.garrada);
+
     if (g.avanco) this.tweens.add({ targets: this.vilao, x: this.vilao.x + dir * g.avanco.distancia, duration: g.avanco.duracao, yoyo: true });
     if (g.corte !== false) this.desenharCorte(dir);
 
@@ -114,6 +117,9 @@ class LutaVilaoGolpes {
 
   // a bola de fogo sai da mão do vilão (no quadro do arremesso) e voa para o lado do herói
   vilaoDisparaBola(g, dir) {
+    // som da bola de fogo saindo da mão, se a fase tiver (o boss)
+    if (this.cfg.sons && this.cfg.sons.bola) tocarSom(this, this.cfg.sons.bola);
+
     const tam = g.tamanho || 1;   // multiplicador do tamanho da bola (1 = o tamanho antigo)
     const bola = this.add.graphics().setDepth(16);
     bola.fillStyle(0xff8a00, 1);
@@ -232,6 +238,9 @@ class LutaVilaoGolpes {
   // investida: depois do aviso, o vilão dispara correndo na direção do herói, passa por ele e só para do outro lado.
   // Quem estiver pulando quando ele passa desvia; quem estiver no chão leva o dano
   vilaoInvestir(g) {
+    // rosnado no começo da corrida, se a fase tiver (o lobo)
+    if (this.cfg.sons && this.cfg.sons.investida) tocarSom(this, this.cfg.sons.investida);
+
     const dir = this.heroi.x < this.vilao.x ? -1 : 1;   // mira onde o herói está agora, no fim do aviso
     this.vilaoInvestindo = true;
     this.investidaDir = dir;

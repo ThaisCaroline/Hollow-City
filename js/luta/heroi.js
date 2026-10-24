@@ -128,12 +128,15 @@ class LutaHeroi {
   atirar() {
     if (!this.cfg.tiro) return;
     if (this.heroiAtacando || this.heroiNoAr || this.heroiAgachado) return;
-    if (this.municao <= 0) return;
     if (this.time.now < this.proximoTiro) return;
     this.proximoTiro = this.time.now + COOLDOWN_TIRO;
 
-    this.municao--;
-    this.atualizarMunicao();
+    // sem munição: faz a animação do tiro, mas só toca o click da arma vazia (sem bala e sem gastar munição)
+    const semMunicao = this.municao <= 0;
+    if (!semMunicao) {
+      this.municao--;
+      this.atualizarMunicao();
+    }
 
     this.heroiAtacando = true;
     this.heroi.play('heroi-tiro');
@@ -146,11 +149,19 @@ class LutaHeroi {
     // a bala e o som saem no quadro em que o braço está levantado
     this.time.delayedCall((TIRO_QUADRO_DISPARO * 1000) / TIRO_FPS, () => {
       if (this.fimDeJogo || this.heroiMorrendo) return;
+      if (semMunicao) {
+        tocarSom(this, 'sem-municao');
+        return;
+      }
       tocarSom(this, this.cfg.sons.tiro || 'tiro');
       const dir = this.heroi.flipX ? -1 : 1;
       this.criarBala(this.heroi.x + dir * 30, dir);
     });
   }
+
+
+
+
 
   criarBala(x, dir) {
     const g = this.add.graphics().setDepth(12);

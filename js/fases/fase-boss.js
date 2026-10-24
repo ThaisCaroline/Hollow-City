@@ -52,9 +52,13 @@ const FASE_BOSS = {
   hitCooldown: 1000,          // ms
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
+  // O soco e a rasteira não têm som próprio: quando acertam, toca o som de dano do herói; quando erram, fica em silêncio.
+  // A esquiva em chamas usa o som de esquiva padrão (esquiva.wav). A fase 2 herda estes sons.
   sons: {
-    dano: 'soco',             // por enquanto o som do soco; troque quando houver um som do boss
-    tiro: 'tiro'              // som do disparo do herói
+    dano: 'boss-dano',        // quando o herói acerta o boss
+    tiro: 'tiro',             // som do disparo do herói
+    bola: 'boss-bola',        // a bola de fogo saindo da mão
+    morte: 'boss-morte'       // só na morte final: a fase 1 sai pela transição, que não chama este som
   },
 
   // golpes do boss. O corpo a corpo dele é o soco
@@ -63,8 +67,9 @@ const FASE_BOSS = {
     corpo: {
       dano: 30,
       alcance: 110,
-      desviaCom: ['agachar', 'pulo'],   // desviado agachando ou pulando
-      aviso: 700,             // aviso laranja de 0,7 s (a animação a 10 fps chega no soco esticado nesse tempo)     avanco: { distancia: 30, duracao: 100 },  // avanço rápido do golpe
+      desviaCom: ['agachar'],           // o soco só se defende agachando (pular leva o dano)
+      aviso: 700,             // aviso laranja de 0,7 s (a animação a 10 fps chega no soco esticado nesse tempo)
+      avanco: { distancia: 30, duracao: 100 },   // avanço rápido do golpe
       corte: false            // sem arco laranja: o boss já tem a animação do soco
     },
     // bola de fogo: de longe (o herói pelo menos a distanciaMin), no lugar do soco.
@@ -298,6 +303,7 @@ const FASE_BOSS = {
     // 3) power-up: tremor na tela, brasas subindo e um clarão no quadro mais forte
     const powerup = () => {
       cena.vilao.play(A.powerup);
+      tocarSom(cena, 'boss-powerup');
 
       const duracao = (9 * 1000) / X.powerupFps;
       cam.shake(duracao + 300, X.tremorForca);
@@ -463,7 +469,7 @@ const FASE_BOSS_2 = {
     corpo: {
       dano: 35,
       alcance: 110,
-      desviaCom: ['agachar', 'pulo'],
+      desviaCom: ['agachar'],   // o soco só se defende agachando (pular leva o dano)
       aviso: 700,
       corte: false
     },

@@ -285,6 +285,9 @@ class LutaVilaoDano {
       }).setOrigin(0.5).setDepth(30);
 
       if (perfeito) {
+        // o som do PERFECT vem logo depois do som do K.O. (o texto aparece junto com o K.O.)
+        this.time.delayedCall(500, () => tocarSom(this, 'perfect'));
+
         this.add.text(256, 116, 'PERFECT!', {
           fontFamily: 'monospace',
           fontSize: '20px',
@@ -322,6 +325,9 @@ class LutaVilaoDano {
         }
       });
     };
+
+    // som de morte do vilão (se a fase tiver): toca quando a animação de morte começa, antes do K.O.
+    if (this.cfg.sons && this.cfg.sons.morte) tocarSom(this, this.cfg.sons.morte);
 
     // se a fase tem animação de morte, ela toca; se não, o vilão tomba; senão, some com um fade
     if (this.cfg.anims.morte) {

@@ -118,6 +118,7 @@ class TelaNome extends Phaser.Scene {
     // nova run: começa do zero, sem as lutas já liberadas da run anterior
     this.game.progresso = 0;
     this.game.fasesVistas = {};
+    this.game.desistidas = {};   // lutas puladas com o TOO HARD? (recomeça vazio a cada run)
 
     this.removerCampo();
     this.cameras.main.fadeOut(400, 0, 0, 0);

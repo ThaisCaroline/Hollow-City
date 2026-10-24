@@ -40,7 +40,7 @@ const FASE3 = {
 
   // golpes do lobisomem. O corpo a corpo dele é a garrada, na altura da cabeça: o herói desvia agachando
   golpes: {
-    intervalo: 1200,         // um ataque a cada 1,2 segundo
+    intervalo: 1600,         // um ataque a cada 1,6 segundo (igual ao ogro)
     corpo: {
       dano: 35,
       alcance: 65,
@@ -60,7 +60,7 @@ const FASE3 = {
       distanciaMin: 130,     // de longe, investe sempre que puder (a essa distância ou mais)
       chancePerto: 0.45,     // de perto, chance de investir em vez de dar a garrada
       primeira: 2000,        // ms: a primeira investida só fica disponível depois disso
-      cooldown: 2800         // ms até ele poder investir de novo
+      cooldown: 3200         // ms até ele poder investir de novo
     }
   },
 
@@ -73,7 +73,7 @@ const FASE3 = {
     piscadas: 9,             // mudanças de cor (ímpar, para terminar na silhueta cheia antes de voltar ao vermelho)
     cor: 0xff6b6b,           // vermelho da fúria
     texto: 'RAGE!',
-    som: 'ogro-dano',        // por enquanto o grunhido do ogro; troque quando houver um uivo
+    som: 'lobo-furia',       // uivo da fúria (2 s, com fade-out)
     tremor: { duracao: 400, forca: 0.01 },
     velocidade: 1.4,         // andar e correr na investida: 40% mais rápido
     intervalo: 0.7,          // tempo entre golpes e entre investidas: 30% menor
@@ -82,8 +82,12 @@ const FASE3 = {
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
-    dano: 'soco',            // por enquanto o som do soco; troque quando houver um rosnado
-    tiro: 'tiro'             // som do disparo do herói
+    dano: 'soco',                 // som quando o herói acerta o lobo (decidido manter o do soco)
+    tiro: 'tiro',                 // som do disparo do herói
+    garrada: 'lobo-garrada',      // a garrada (toca no momento do golpe)
+    investida: 'lobo-investida',  // rosnado no começo da corrida da investida
+    morte: 'lobo-morte',          // toca quando a animação de morte começa, antes do K.O.
+    entrada: 'lobo-entrada'       // uivo da entrada, antes do diálogo dele (só na primeira vez da luta)
   },
 
   // golpes do herói disponíveis nesta luta (o herói mantém o que aprendeu contra o ogro)
@@ -104,7 +108,7 @@ const FASE3 = {
   // Soco e chute não causam dano (aparece BLOCKED); o tiro passa. Logo depois vem a garrada de contra-ataque, mais forte
   bloqueio: {
     primeiro: 4000,     // ms: o primeiro bloqueio só fica disponível depois disso
-    intervalo: 6000,    // ms entre um bloqueio e o seguinte (na fúria, 30% menos)
+    intervalo: 7000,    // ms entre um bloqueio e o seguinte (na fúria, 30% menos; igual ao ogro)
     duracao: 1200,      // ms encolhido, antes da garrada
     contra: 'corpo',    // golpe do contra-ataque: a garrada
     contraDano: 50,     // dano da garrada logo depois do bloqueio (a normal tira 35)
