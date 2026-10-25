@@ -11,7 +11,7 @@ const CUTSCENE_HEROI_PARA_EM = 256;           // x onde o herói para
 const CUTSCENE_ANTES_DE_PARAR = 2500;         // ms: o corte para o slide 1 acontece tanto tempo antes de o herói parar
 const CUTSCENE_SLIDE1_TEMPO = 2500;           // ms: quanto o boss no trono fica na tela
 const CUTSCENE_FADE_ENTRE_SLIDES = 1000;      // ms: escurecer (e depois clarear) entre o slide 1 e o 2
-const CUTSCENE_ESPERA_DIALOGO = 2500;         // ms: o goblin fica na tela antes da fala do boss
+const CUTSCENE_ESPERA_DIALOGO = 3500;         // ms: o goblin fica na tela antes da fala do boss
 
 const CUTSCENE_LUTA_SEGUINTE = 3;             // índice da luta que vem depois da cutscene (3 = luta 4, o ogro)
 
@@ -121,7 +121,10 @@ class CutsceneBoss extends Phaser.Scene {
     // corta para o slide 1 ainda com o herói andando
     this.time.delayedCall(Math.max(0, tempoAndando - CUTSCENE_ANTES_DE_PARAR), () => this.slide1());
 
-    this.cameras.main.fadeIn(600, 0, 0, 0);
+    this.cameras.main.fadeIn(1200, 0, 0, 0);
+
+    // as falas desta cena entram devagar: caixa com fade e texto letra por letra (ver dialogo.js)
+    this.dialogoDevagar = true;
   }
 
   // corte de cena com fade preto: troca o que aparece no meio do fade
@@ -228,7 +231,7 @@ class CutsceneBoss extends Phaser.Scene {
     if (this.saindo) return;
     this.saindo = true;
 
-    this.cameras.main.fadeOut(400, 0, 0, 0);
+    this.cameras.main.fadeOut(900, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('CenaLuta', { fase: CUTSCENE_LUTA_SEGUINTE });
     });

@@ -1,10 +1,16 @@
 // Caixa de diálogo com retrato. Enquanto estiver aberta, a cena deve pausar a ação.
 // retrato: { chave, frame, escala } com a imagem de quem está falando.
+// Modo devagar (opcoes.devagar, ou a cena com dialogoDevagar ligado): a caixa aparece com fade e o texto entra letra por letra.
+// Um toque completa a fala na hora, e o toque seguinte fecha a caixa. Fora desse modo, a caixa aparece inteira e um toque fecha.
 
 const RETRATO_HEROI = { chave: 'heroi-andar', frame: 0, escala: 1.8 };
 const RETRATO_BRUXA = { chave: 'vilao-preto', frame: 0, escala: 1.2 };
 
-function mostrarDialogo(cena, nome, texto, aoFechar, retrato = RETRATO_HEROI) {
+const DIALOGO_FADE = 700;          // ms: tempo da caixa aparecendo (modo devagar)
+const DIALOGO_MS_POR_LETRA = 70;   // ms entre uma letra e a seguinte (modo devagar)
+
+function mostrarDialogo(cena, nome, texto, aoFechar, retrato = RETRATO_HEROI, opcoes = {}) {
+  const devagar = !!(opcoes.devagar || cena.dialogoDevagar);
   const topo = 4;
   const elementos = [];
 
@@ -20,28 +26,85 @@ function mostrarDialogo(cena, nome, texto, aoFechar, retrato = RETRATO_HEROI) {
     fontStyle: 'bold',
     color: '#ff8a00'
   }).setDepth(42));
-  elementos.push(cena.add.text(106, topo + 28, texto, {
+
+  const textoDialogo = cena.add.text(106, topo + 28, texto, {
     fontFamily: 'monospace',
     fontSize: '11px',
     color: '#ffffff',
     wordWrap: { width: 370 }
-  }).setDepth(42));
-  elementos.push(cena.add.text(470, topo + 62, 'TAP OR ENTER', {
+  }).setDepth(42);
+  elementos.push(textoDialogo);
+
+  const dica = cena.add.text(470, topo + 62, 'TAP OR ENTER', {
     fontFamily: 'monospace',
     fontSize: '8px',
     color: '#aaaaaa'
-  }).setOrigin(1, 0).setDepth(42));
+  }).setOrigin(1, 0).setDepth(42);
+  elementos.push(dica);
+
+  let digitando = false;   // true enquanto o texto ainda está sendo escrito (modo devagar)
+  let letras = null;       // o relógio que escreve uma letra de cada vez
+  let completo = texto;
+
+  // escreve a fala inteira de uma vez e mostra a dica de toque
+  const terminarDigitacao = () => {
+    if (!digitando) return;
+    digitando = false;
+    if (letras) letras.remove();
+    textoDialogo.setText(completo);
+    cena.tweens.add({ targets: dica, alpha: 1, duration: 400 });
+  };
+
+  if (devagar) {
+    // a caixa aparece com fade (a dica espera a fala terminar)
+    const caixa = elementos.filter((e) => e !== dica);
+    caixa.forEach((e) => e.setAlpha(0));
+    cena.tweens.add({ targets: caixa, alpha: 1, duration: DIALOGO_FADE });
+
+    // quebra as linhas antes, para a frase não pular de linha enquanto é escrita
+    completo = textoDialogo.getWrappedText(texto).join('\n');
+    textoDialogo.setText('');
+    dica.setAlpha(0);
+    digitando = true;
+
+    // começa a escrever quando a caixa terminou de aparecer
+    let escritas = 0;
+    cena.time.delayedCall(DIALOGO_FADE, () => {
+      if (!digitando) return;
+      letras = cena.time.addEvent({
+        delay: DIALOGO_MS_POR_LETRA,
+        repeat: completo.length - 1,
+        callback: () => {
+          escritas++;
+          textoDialogo.setText(completo.slice(0, escritas));
+          if (escritas >= completo.length) terminarDigitacao();
+        }
+      });
+    });
+  }
+
+  // enquanto escreve, o toque completa a fala; depois, fecha a caixa
+  const aoToque = () => {
+    if (digitando) {
+      terminarDigitacao();
+      return;
+    }
+    fechar();
+  };
 
   const fechar = () => {
-    cena.input.off('pointerdown', fechar);
-    cena.input.keyboard.off('keydown-ENTER', fechar);
+    cena.input.off('pointerdown', aoToque);
+    cena.input.keyboard.off('keydown-ENTER', aoToque);
+    digitando = false;
+    if (letras) letras.remove();
+    cena.tweens.killTweensOf(elementos);
     elementos.forEach((e) => e.destroy());
     if (aoFechar) aoFechar();
   };
 
   // pequena espera para o toque que abriu o diálogo não fechar na hora
   cena.time.delayedCall(300, () => {
-    cena.input.on('pointerdown', fechar);
-    cena.input.keyboard.on('keydown-ENTER', fechar);
+    cena.input.on('pointerdown', aoToque);
+    cena.input.keyboard.on('keydown-ENTER', aoToque);
   });
 }
