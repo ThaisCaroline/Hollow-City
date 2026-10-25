@@ -1,5 +1,17 @@
 // Ranking da fase: aparece depois do K.O. Mostra o tempo da luta e o top 15 daquela fase, com a data de cada vitória.
 
+// grava o tempo da luta vencida no ranking da fase, com a data da vitória e o identificador da run (chamado pelo K.O., em luta/vilao-dano.js)
+function registrarTempo(cena) {
+  db.collection('ranking').add({
+    nome: cena.game.nomeJogador || 'ANON',
+    fase: cena.fase + 1,                          // luta 1, 2, 3 ou 4
+    tempo: Number(cena.tempoLuta.toFixed(2)),     // em segundos
+    data: new Date(),                             // data e hora da vitória
+    runId: cena.game.runId || null,               // liga este tempo à run completa
+    perfect: !cena.heroiLevouDano                 // true se venceu sem levar dano (o selo PERFECT do ranking)
+  }).catch((erro) => console.error('Erro ao salvar ranking:', erro));
+}
+
 class RankingFase extends Phaser.Scene {
   constructor() {
     super('RankingFase');

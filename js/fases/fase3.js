@@ -4,11 +4,7 @@
 // Os valores de vida, dano e alcance são um chute inicial: ajuste depois do teste.
 
 const FASE3 = {
-  nome: 'WEREWOLF',
   rotuloVilao: 'WEREWOLF',   // nome que aparece na barra de vida do vilão
-  dialogoHeroi: 'Another one of his beasts. This ends tonight.',
-  dialogoVilao: 'I can smell your fear, detective...',
-  dialogoDerrota: 'The moon... will rise... again...',
 
   cenario: 'assets/cenario-lobisomem-512.png',
   cenarioChave: 'cenario-lobisomem',

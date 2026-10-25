@@ -93,18 +93,6 @@ class CenaLuta extends Phaser.Scene {
     if (!comEntrada) this.comecarCombate();
   }
 
-  // grava o tempo da luta vencida no ranking da fase, com a data da vitória e o identificador da run
-  registrarTempo() {
-    db.collection('ranking').add({
-      nome: this.game.nomeJogador || 'ANON',
-      fase: this.fase + 1,                          // luta 1, 2, 3 ou 4
-      tempo: Number(this.tempoLuta.toFixed(2)),     // em segundos
-      data: new Date(),                             // data e hora da vitória
-      runId: this.game.runId || null,               // liga este tempo à run completa
-      perfect: !this.heroiLevouDano                 // true se venceu sem levar dano (o selo PERFECT do ranking)
-    }).catch((erro) => console.error('Erro ao salvar ranking:', erro));
-  }
-
   // ---------- loop principal ----------
 
   update(tempo, delta) {

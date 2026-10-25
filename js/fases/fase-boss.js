@@ -5,11 +5,7 @@
 // Os valores de vida, dano e alcance são um chute inicial: ajuste depois do teste.
 
 const FASE_BOSS = {
-  nome: 'SUN DEVOURER',
   rotuloVilao: 'SUN DEVOURER',   // nome que aparece na barra de vida do vilão
-  // as falas só aparecem se a luta for aberta direto pelo console; no jogo elas já aconteceram na cutscene
-  dialogoHeroi: 'I came to send you back to hell.',
-  dialogoVilao: 'Do your best, little human...',
 
   // cenário: o recorte de 512x224 do cenário da cutscene
   cenario: 'assets/cenario-boss-512.png',
@@ -233,7 +229,7 @@ const FASE_BOSS = {
     if (this.proximaFase) criarAnimacoesDoBoss(cena, this.proximaFase.texturas, this.proximaFase.anims);
   },
 
-  // a vida da fase 1 zerou (chamada pelo derrotaDoVilão, em luta/vilao-dano.js): cai, levanta, faz o power-up e vira a fase 2.
+  // a vida da fase 1 zerou (chamada pelo derrotaDoVilao, em luta/vilao-dano.js): cai, levanta, faz o power-up e vira a fase 2.
   // A cena fica com fimDeJogo ligado durante tudo isso: os golpes e as pausas que já estavam agendados são ignorados
   // e o update fica parado. Só no fim a luta volta.
   transicao(cena) {

@@ -267,7 +267,7 @@ class LutaVilaoDano {
 
     // vitória: grava o tempo desta luta no ranking
     this.tempoLuta = (this.time.now - this.inicioLuta) / 1000;
-    this.registrarTempo();
+    registrarTempo(this);
 
     this.vilao.clearTint();
     if (this.vilao.postFX) this.vilao.postFX.clear();   // tira o contorno verde, se estiver ligado

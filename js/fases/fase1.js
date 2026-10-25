@@ -1,10 +1,7 @@
 // Fase 1: a criatura mascarada (no lugar da bruxa). Tudo que é dela fica aqui: textos, cenário, sons, sprites, animações, golpes, poção, vida e movimento.
 
 const FASE1 = {
-  nome: 'MASKED ONE',        // nome provisório que aparece nas falas; troque quando decidir o nome dela
   rotuloVilao: 'WITCH',    // nome que aparece na barra de vida do vilão
-  dialogoHeroi: 'So you are the one they sent. Who leads these monsters?',
-  dialogoVilao: 'Turn back, detective. Some questions are better left unanswered.',
 
   cenario: 'assets/cenario-noite.png',
   cenarioChave: 'cenario',
