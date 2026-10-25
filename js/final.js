@@ -76,7 +76,7 @@ class Final extends Phaser.Scene {
     this.imagem = null;
 
     // música da cena final, em loop
-    this.musica = this.sound.add('final-music', { loop: true, volume: 0.6 });
+    this.musica = this.sound.add('final-music', { loop: true, volume: 0.9 });
     this.musica.play();
 
     // fundo de cor (aparece quando o slide não tem imagem)

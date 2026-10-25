@@ -26,7 +26,7 @@ function tocarSomAleatorio(cena, nomes, volume = 0.9) {
 }
 
 // música de fundo: guardada no jogo inteiro, em loop, e não reinicia ao trocar de cena
-function tocarMusica(cena, nome, volume = 0.12) {
+function tocarMusica(cena, nome, volume = 0.3) {
   const jogo = cena.game;
   if (!jogo.cache.audio.exists(nome)) return;
   if (!jogo.musicaFundo) jogo.musicaFundo = jogo.sound.add(nome, { loop: true, volume });
