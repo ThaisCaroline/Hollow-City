@@ -157,6 +157,7 @@ const FASE_BOSS = {
   // Os tempos são em ms; o herói fica parado e o cronômetro da luta pausa durante a cena toda
   transicaoTempos: {
     pausaCaido: 2900,          // fica caído antes de levantar
+    somLevantarAntes: 400,     // o som de levantar começa isto (ms) antes da animação, com ele ainda caído
     levantarFps: 6,           // 5 quadros: ~0,8 s
     pausaAntesPowerup: 300,   // de pé, antes do power-up começar
     powerupFps: 8,            // 9 quadros: ~1,1 s
@@ -232,7 +233,7 @@ const FASE_BOSS = {
     if (this.proximaFase) criarAnimacoesDoBoss(cena, this.proximaFase.texturas, this.proximaFase.anims);
   },
 
-  // a vida da fase 1 zerou (chamada pelo derrotaDoVilao, em luta/vilao-dano.js): cai, levanta, faz o power-up e vira a fase 2.
+  // a vida da fase 1 zerou (chamada pelo derrotaDoVilão, em luta/vilao-dano.js): cai, levanta, faz o power-up e vira a fase 2.
   // A cena fica com fimDeJogo ligado durante tudo isso: os golpes e as pausas que já estavam agendados são ignorados
   // e o update fica parado. Só no fim a luta volta.
   transicao(cena) {
@@ -291,12 +292,12 @@ const FASE_BOSS = {
     cena.vilao.once('animationcomplete-' + A.morte, () => {
       cena.anims.globalTimeScale = 1;
       cena.time.delayedCall(X.pausaCaido, levantar);
+      cena.time.delayedCall(X.pausaCaido - X.somLevantarAntes, () => tocarSom(cena, 'boss-levantar'));
     });
 
     // 2) levanta
     const levantar = () => {
       cena.vilao.play(A.levantar);
-      tocarSom(cena, 'boss-levantar');
       cena.vilao.once('animationcomplete-' + A.levantar, () => {
         cena.time.delayedCall(X.pausaAntesPowerup, powerup);
       });
