@@ -67,6 +67,36 @@ const TEXTOS = {
     pt: 'A lua... vai nascer... de novo...'
   },
 
+  // itens: o pensamento do detetive ao pegar o que o vilão deixou cair (poção, soco inglês, balas de prata)
+  'item.pocao': { en: 'This might come in handy.', pt: 'Isso pode ser útil.' },
+  'item.soco': { en: 'He broke doors with these.', pt: 'Ele quebrava portas com isto.' },
+  'item.balas': { en: 'Silver... He knew what he was becoming.', pt: 'Prata... Ele sabia no que estava se tornando.' },
+
+  // mapa: o nome do lugar de cada luta
+  'mapa.lugar1': { en: 'WHISPER ALLEY', pt: 'BECO DOS SUSSURROS' },
+  'mapa.lugar2': { en: 'OLD CHURCH', pt: 'IGREJA VELHA' },
+  'mapa.lugar3': { en: 'PINE STREET', pt: 'RUA DOS PINHEIROS' },
+  'mapa.lugar4': { en: "DEVOURER'S CASTLE", pt: 'CASTELO DO DEVORADOR' },
+
+  // final: os slides com a manhã chegando; o último mostra THE END e o agradecimento com o nome do jogador
+  'final.1': { en: 'The eclipse cracks...', pt: 'O eclipse racha...' },
+  'final.2': {
+    en: 'The creatures that watched turn from the light, and are gone.',
+    pt: 'As criaturas que assistiam viram as costas para a luz e somem.'
+  },
+  'final.3': {
+    en: 'Some of these doors will never open again.',
+    pt: 'Algumas dessas portas nunca mais vão se abrir.'
+  },
+  'final.4': { en: 'The sun is back...', pt: 'O sol voltou...' },
+  'final.5': {
+    en: 'The survivors find their courage... and step outside, after so long...',
+    pt: 'Os sobreviventes tomam coragem... e saem de casa, depois de tanto tempo...'
+  },
+  'final.fim': { en: 'THE END', pt: 'FIM' },
+  'final.obrigado': { en: 'Thanks for playing, {nome}!', pt: 'Obrigado por jogar, {nome}!' },
+  'final.amigo': { en: 'friend', pt: 'jogador' },
+
  // luta 4: o Sun Devourer (as falas da cutscene antes da luta e a fala de derrota)
   'luta4.derrota': {
     en: 'Kill me, and the sun rises... on a city of graves...',

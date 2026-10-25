@@ -39,22 +39,24 @@ class Abertura extends Phaser.Scene {
 
     this.fundo = this.add.rectangle(0, 0, 512, 224, 0x000000).setOrigin(0, 0).setDepth(0);
 
-    // faixa escura transparente embaixo, atrás do texto (só aparece nas telas que têm texto)
-    this.faixa = this.add.rectangle(0, 184, 512, 40, 0x000000, 0.65).setOrigin(0, 0).setDepth(1).setAlpha(0);
-
-    this.textoSlide = this.add.text(256, 204, '', {
+    // legenda embaixo: só o texto, com contorno preto, para a imagem ficar livre (só aparece nas telas que têm texto)
+    this.textoSlide = this.add.text(256, 218, '', {
       fontFamily: 'monospace',
       fontSize: '12px',
       color: '#ffffff',
       align: 'center',
       wordWrap: { width: 480 },
-      lineSpacing: 4
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+      lineSpacing: 4,
+      stroke: '#000000',
+      strokeThickness: 5
+    }).setOrigin(0.5, 1).setAlpha(0).setDepth(2);
 
     this.dica = this.add.text(504, 6, 'TAP TO SKIP', {
       fontFamily: 'monospace',
       fontSize: '8px',
-      color: '#aaaaaa'
+      color: '#aaaaaa',
+      stroke: '#000000',
+      strokeThickness: 3
     }).setOrigin(1, 0).setDepth(2);
 
     // toque ou Enter avança para a próxima tela
@@ -88,13 +90,12 @@ class Abertura extends Phaser.Scene {
         .setDepth(0.5);
     }
 
-    // texto no idioma atual; telas sem texto ficam sem faixa
+    // texto no idioma atual; telas sem texto ficam sem legenda
     const texto = slide.texto ? traduzir(slide.texto) : '';
     this.textoSlide.setText(texto);
     this.textoSlide.setAlpha(0);
-    this.faixa.setAlpha(0);
     if (texto) {
-      this.tweens.add({ targets: [this.textoSlide, this.faixa], alpha: 1, duration: 1400 });
+      this.tweens.add({ targets: this.textoSlide, alpha: 1, duration: 1400 });
     }
 
     this.timer = this.time.delayedCall(slide.duracao, () => this.proximo());

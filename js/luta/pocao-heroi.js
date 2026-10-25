@@ -4,12 +4,12 @@
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
 // o que cai em cada luta (índice da luta: 0 = a primeira). Luta que não aparece aqui não deixa nada.
-//   chao: imagem do item no chão | animacao: animação do herói pegando | brilho: cor do anel no chão
+//   chao: imagem do item no chão | animacao: animação do herói pegando | brilho: cor do anel no chão | pensamento: o texto do balão (textos.js)
 const ITENS_DA_LUTA = {
-  0: { chao: 'icone-pocao-chao', animacao: 'heroi-pegar', brilho: 0x4cff6a },              // poção (criatura)
-  1: { chao: 'icone-soco-ingles-chao', animacao: 'heroi-pegar-soco', brilho: 0xdfe6ee },   // soco inglês (ogro)
+  0: { chao: 'icone-pocao-chao', animacao: 'heroi-pegar', brilho: 0x4cff6a, pensamento: 'item.pocao' },              // poção (criatura)
+  1: { chao: 'icone-soco-ingles-chao', animacao: 'heroi-pegar-soco', brilho: 0xdfe6ee, pensamento: 'item.soco' },   // soco inglês (ogro)
   // balas de prata (lobisomem); por enquanto reaproveita a animação de pegar o soco inglês (o objeto na mão é prateado também)
-  2: { chao: 'icone-balas-prata-chao', animacao: 'heroi-pegar-soco', brilho: 0xe8eef6 }
+  2: { chao: 'icone-balas-prata-chao', animacao: 'heroi-pegar-soco', brilho: 0xe8eef6, pensamento: 'item.balas' }
 };
 
 const POCAO_DISTANCIA_CORPO = 30;     // px: onde o item cai, contando do corpo, do lado do herói
@@ -18,10 +18,9 @@ const POCAO_SUBIDA_MS = 350;          // ms: tempo subindo
 const POCAO_DESCIDA_MS = 550;         // ms: tempo caindo (ele quica no fim)
 const POCAO_DISTANCIA_PEGAR = 24;     // px: a que distância do item o herói para para pegar
 const POCAO_VELOCIDADE_ANDAR = 90;    // px por segundo: o herói andando até o item
-const POCAO_PAUSA_DEPOIS = 600;       // ms: do fim da animação de pegar até o K.O.
+const POCAO_TOQUE_BALAO_MS = 500;     // ms: depois que o balão de pensamento aparece, o toque só vale a partir daqui (um toque solto não pula a fala)
 const POCAO_PAUSA_AVISO = 800;        // ms: do K.O. até aparecer o aviso para continuar
 const POCAO_AVISO = 'TAP OR ENTER TO CONTINUE';
-// const POCAO_PENSAMENTO = 'Hmm... this might come in handy.';   // (desligado) o pensamento do herói, no balão
 
 // usar a poção (animação heroi-beber: 6 quadros a 8 fps = 0,75 s)
 const POCAO_USO_QUADRO_CURA = 3;      // a cura sai no quadro 4 (índice 3), quando a garrafa chega à boca
@@ -244,29 +243,34 @@ class LutaPocaoHeroi {
       objeto.destroy();
       anel.destroy();
 
-      // a animação termina com ele de pé, com o item na mão; pouco depois entra o K.O.
+      // a animação termina com ele de pé, com o item na mão: o balão de pensamento aparece e fica até o toque; depois entra o K.O.
       this.heroi.once('animationcomplete-' + item.animacao, () => {
-        // (desligado) com o pensamento: o balão aparece, o jogo espera o toque e só então vem o K.O.
-        // const balao = this.mostrarPensamento();
-        // this.esperarToque(aoTerminar, balao);
-        this.time.delayedCall(POCAO_PAUSA_DEPOIS, aoTerminar);
+        const balao = this.mostrarPensamento(item);
+        this.esperarToqueNoBalao(balao, aoTerminar);
       });
     });
   }
 
-  // (DESLIGADO) balão de pensamento em cima da cabeça do herói (as bolinhas ligam o balão à cabeça).
-  // Para ligar de novo: apague o /* e o */ e use as 2 linhas comentadas em heroiPegaItem.
-  /*
-  mostrarPensamento() {
-    const texto = this.add.text(0, 0, POCAO_PENSAMENTO, {
+  // balão de pensamento em cima da cabeça do herói (as bolinhas ligam o balão à cabeça), com a fala do item (textos.js)
+  // e a dica TAP TO CONTINUE embaixo (ela só aparece quando o toque já vale)
+  mostrarPensamento(item) {
+    const texto = this.add.text(0, 0, traduzir(item.pensamento), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'italic',
-      color: '#222222'
+      color: '#222222',
+      align: 'center',
+      wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
-    const largura = texto.width + 16;
-    const altura = texto.height + 12;
+    const dica = this.add.text(0, 0, 'TAP TO CONTINUE', {
+      fontFamily: 'monospace',
+      fontSize: '8px',
+      color: '#666666'
+    }).setOrigin(0.5).setAlpha(0);
+
+    const largura = Math.max(texto.width, dica.width) + 16;
+    const altura = texto.height + dica.height + 16;
     const x = Phaser.Math.Clamp(this.heroi.x, largura / 2 + 8, 512 - largura / 2 - 8);
     const desvio = this.heroi.x - x;   // se o balão foi empurrado para dentro da tela, as bolinhas continuam na cabeça
 
@@ -280,12 +284,44 @@ class LutaPocaoHeroi {
       balao.strokeCircle(desvio + dx, dy, raio);
     });
 
-    texto.setPosition(0, -altura / 2);
-    const conjunto = this.add.container(x, this.heroi.y - 82, [balao, texto]).setDepth(31).setScale(0.6).setAlpha(0);
+    texto.setPosition(0, -altura + 6 + texto.height / 2);
+    dica.setPosition(0, -6 - dica.height / 2);
+    const conjunto = this.add.container(x, this.heroi.y - 82, [balao, texto, dica]).setDepth(31).setScale(0.6).setAlpha(0);
+    conjunto.dica = dica;
     this.tweens.add({ targets: conjunto, scale: 1, alpha: 1, duration: 250, ease: 'Back.Out' });
     return conjunto;
   }
-  */
+
+  // o balão fica na tela até o toque (ou Enter), porque a pessoa pode não ter terminado de ler; depois some e chama aoTerminar (o K.O.).
+  // O toque só vale depois de um instante, para um toque solto não pular a fala
+  esperarToqueNoBalao(balao, aoTerminar) {
+    this.time.delayedCall(POCAO_TOQUE_BALAO_MS, () => {
+      balao.dica.setAlpha(1);
+      this.tweens.add({ targets: balao.dica, alpha: 0.25, duration: 600, yoyo: true, repeat: -1 });
+
+      let seguiu = false;
+      const continuar = () => {
+        if (seguiu) return;
+        seguiu = true;
+        this.input.off('pointerdown', continuar);
+        this.input.keyboard.off('keydown-ENTER', continuar);
+
+        this.tweens.killTweensOf(balao.dica);
+        this.tweens.add({
+          targets: balao,
+          alpha: 0,
+          duration: 250,
+          onComplete: () => {
+            balao.destroy();
+            aoTerminar();
+          }
+        });
+      };
+
+      this.input.on('pointerdown', continuar);
+      this.input.keyboard.on('keydown-ENTER', continuar);
+    });
+  }
 
   // aviso para continuar: aparece um instante depois e o toque (ou Enter) chama aoTerminar.
   // O toque só vale depois de um instante, para um toque solto não pular a cena.

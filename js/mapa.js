@@ -1,7 +1,7 @@
 // Mapa do caminho até o castelo: mostra a cidade inteira, com os pinos desenhados por código.
 // Lutas já vencidas podem ser repetidas, a atual pisca e as seguintes ficam bloqueadas.
 // Uma luta pulada com o TOO HARD? continua como CLICK TO ENTER (pisca) e a seguinte já fica liberada.
-// Cada pino tem a legenda STAGE 1 a 4, e o botão ENDING mostra o final a qualquer momento.
+// Cada pino tem o nome do lugar e a legenda STAGE 1 a 4, e o botão ENDING mostra o final a qualquer momento.
 
 // posições dos pinos sobre a imagem (em pixels do mapa de 1568 x 672)
 const POSICOES_MAPA = [
@@ -89,11 +89,12 @@ class MapaCaminho extends Phaser.Scene {
       const escala = 1.2 / zoom;
       const pino = desenharPino(this, pos.x, pos.y, cor, escala);
 
-      // número da luta, em inglês, em cima do pino
-      const etiqueta = this.add.text(pos.x, pos.y - 28 * escala, `STAGE ${i + 1}`, {
+      // nome do lugar e número da luta, em cima do pino (o nome vem do textos.js)
+      const etiqueta = this.add.text(pos.x, pos.y - 28 * escala, `${traduzir(`mapa.lugar${i + 1}`)}\nSTAGE ${i + 1}`, {
         fontFamily: 'monospace',
         fontSize: `${Math.round(9 / zoom)}px`,
         fontStyle: 'bold',
+        align: 'center',
         color: bloqueado ? '#777777' : '#ffffff',
         stroke: '#000000',
         strokeThickness: Math.max(2, Math.round(2 / zoom))

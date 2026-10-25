@@ -1,51 +1,14 @@
 // Tela final: slideshow com a manhã chegando depois da última luta.
-// Cada slide tem uma imagem (assets/final-slideN.jpg), texto, cor de fundo e duração.
-// O último slide é o agradecimento, com o nome do jogador.
+// Cada slide tem uma imagem (assets/endgame/final-N.png) e um texto (identificador em textos.js).
+// O último slide mostra THE END e o agradecimento com o nome do jogador.
 
 const SLIDES_FINAL = [
-  {
-    texto: 'The town of Hollow City has not seen the sun in years.',
-    cor: 0x000000,
-    duracao: 4000,
-    imagem: 'assets/final-slide1.jpg'
-  },
-  {
-    texto: 'The monsters are gone.',
-    cor: 0x0a1414,
-    duracao: 3000,
-    imagem: 'assets/final-slide2.jpg'
-  },
-  {
-    texto: 'Behind closed doors, people wait.\nNo one knows if it is safe to come out.',
-    cor: 0x142a2a,
-    duracao: 4500,
-    imagem: 'assets/final-slide3.jpg'
-  },
-  {
-    texto: 'One by one, the doors open.',
-    cor: 0x1e3a3a,
-    duracao: 3500,
-    imagem: 'assets/final-slide4.jpg'
-  },
-  {
-    texto: 'They step into the street, still afraid,\nlooking up at the sky.',
-    cor: 0x2a2a30,
-    duracao: 4000,
-    imagem: 'assets/final-slide5.jpg'
-  },
-  {
-    texto: 'Dawn breaks over the mountains.',
-    cor: 0x6a3a2a,
-    duracao: 4000,
-    imagem: 'assets/final-slide6.jpg'
-  },
-  {
-    texto: 'THE END',
-    cor: 0x000000,
-    corTexto: '#ffffff',
-    imagem: 'assets/final-slide7.jpg',
-    final: true
-  }
+  { texto: 'final.1', imagem: 'assets/endgame/final-1.png', duracao: 4500 },
+  { texto: 'final.2', imagem: 'assets/endgame/final-2.png', duracao: 5000 },
+  { texto: 'final.3', imagem: 'assets/endgame/final-3.png', duracao: 4500 },
+  { texto: 'final.4', imagem: 'assets/endgame/final-4.png', duracao: 4500 },
+  { texto: 'final.5', imagem: 'assets/endgame/final-5.png', duracao: 5500 },
+  { imagem: 'assets/endgame/final-6.png', final: true }
 ];
 
 class Final extends Phaser.Scene {
@@ -86,26 +49,46 @@ class Final extends Phaser.Scene {
       this.tweens.add({ targets: fundoDoJogo, volume: 0, duration: 800, onComplete: () => fundoDoJogo.pause() });
     }
 
-    // fundo de cor (aparece quando o slide não tem imagem)
+    // fundo preto (aparece enquanto a imagem do slide não carrega)
     this.fundo = this.add.rectangle(0, 0, 512, 224, 0x000000).setOrigin(0, 0).setDepth(0);
 
-    // faixa escura atrás do texto, para ele ficar legível sobre as imagens
-    this.faixa = this.add.rectangle(0, 8, 512, 56, 0x000000, 0.6).setOrigin(0, 0).setDepth(1);
-
-    this.textoSlide = this.add.text(256, 36, '', {
+    // legenda embaixo: só o texto, com contorno preto, para a imagem ficar livre. Cresce para cima a partir da linha de baixo
+    this.textoSlide = this.add.text(256, 218, '', {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#ffffff',
       align: 'center',
-      wordWrap: { width: 440 },
-      lineSpacing: 6
+      wordWrap: { width: 460 },
+      lineSpacing: 6,
+      stroke: '#000000',
+      strokeThickness: 5
+    }).setOrigin(0.5, 1).setAlpha(0).setDepth(2);
+
+    // último slide: THE END grande no céu e o agradecimento com o nome
+    const contorno = { stroke: '#101820', strokeThickness: 5 };
+    this.textoFim = this.add.text(256, 40, '', {
+      fontFamily: 'monospace',
+      fontSize: '32px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      ...contorno
     }).setOrigin(0.5).setAlpha(0).setDepth(2);
 
-    this.dica = this.add.text(256, 206, '', {
+    this.textoObrigado = this.add.text(256, 74, '', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#ffffff',
+      ...contorno
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    // a dica (TAP TO SKIP) fica no canto de cima, à direita
+    this.dica = this.add.text(504, 6, '', {
       fontFamily: 'monospace',
       fontSize: '8px',
-      color: '#aaaaaa'
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+      color: '#aaaaaa',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(1, 0).setAlpha(0).setDepth(2);
 
     // toque ou Enter avança o slide; no último, sai para a tela inicial
     this.input.on('pointerdown', () => this.avancar());
@@ -141,28 +124,30 @@ class Final extends Phaser.Scene {
         .setDepth(0.5);
     }
 
-    this.fundo.setFillStyle(slide.cor);
-
-    let texto = slide.texto;
-    if (slide.final) {
-      const nome = this.game.nomeJogador || 'friend';
-      texto = `${slide.texto}\nThanks for playing, ${nome}!`;
-    }
-
-    this.textoSlide
-      .setText(texto)
-      .setColor(slide.corTexto || '#ffffff')
-      .setAlpha(0);
-    this.tweens.add({ targets: this.textoSlide, alpha: 1, duration: 800 });
+    // slides comuns: legenda embaixo; último slide: THE END e o agradecimento
+    this.textoSlide.setVisible(!slide.final);
+    this.textoFim.setAlpha(0);
+    this.textoObrigado.setAlpha(0);
 
     if (slide.final) {
+      const nome = this.game.nomeJogador || traduzir('final.amigo');
+      this.textoFim.setText(traduzir('final.fim'));
+      this.textoObrigado.setText(traduzir('final.obrigado', { nome }));
+      this.tweens.add({ targets: this.textoFim, alpha: 1, duration: 1200 });
+      this.tweens.add({ targets: this.textoObrigado, alpha: 1, duration: 1000, delay: 1200 });
+
       // o último slide espera o jogador tocar, para não sair sem querer
       this.dica.setText('TAP OR ENTER TO RETURN').setColor('#ffffff').setAlpha(0);
-      this.time.delayedCall(1500, () => {
+      this.time.delayedCall(2500, () => {
         this.podeSair = true;
         this.tweens.add({ targets: this.dica, alpha: 1, duration: 600 });
       });
     } else {
+      this.textoSlide
+        .setText(traduzir(slide.texto))
+        .setAlpha(0);
+      this.tweens.add({ targets: this.textoSlide, alpha: 1, duration: 800 });
+
       this.dica.setText('TAP TO SKIP').setColor('#aaaaaa').setAlpha(1);
       this.timer = this.time.delayedCall(slide.duracao, () => this.proximo());
     }

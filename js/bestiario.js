@@ -64,7 +64,7 @@ const BESTIARIO = [
   {
     nome: 'SUN DEVOURER: SECOND FORM',
     imagem: 'sun-devourer-2',
-    lenda: 'When the eclipse breaks, the darkness does not die: it hardens. He rises in armor of black glass, veined with molten red, a crown of fire burning between his horns. The cracks in the street glow where he walks, and whatever still stands begins to burn.',
+    lenda: 'When his shell breaks, the darkness does not die: it hardens. He rises in armor of black glass, veined with molten red, a crown of fire burning between his horns. The cracks in the street glow where he walks, and whatever still stands begins to burn.',
     dicas: [
       '{DUCK} his punch.',
       '{JUMP} his sweep kick.',
