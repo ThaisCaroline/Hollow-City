@@ -3,6 +3,7 @@
 // Passo 2: corta para o slide 1 (boss no trono) e o slide 2 (goblin ajoelhado + fala do boss).
 // Passo 3: volta ao jogo com o cenário cheio; o boss chega andando e para; diálogos detetive/boss.
 // Depois das falas: fade e vai para a luta (por enquanto a luta 4, do ogro).
+// As falas vêm de textos.js (identificadores luta4.*).
 
 const CUTSCENE_CENARIO_ESCALA = 512 / 1376;   // largura da imagem -> largura da tela
 const CUTSCENE_CENARIO_Y = -42;               // sobe o fundo para a faixa de terra encostar nos pés (CHAO_Y)
@@ -128,7 +129,7 @@ class CutsceneBoss extends Phaser.Scene {
   }
 
   // corte de cena com fade preto: troca o que aparece no meio do fade
-  corte(aoTrocar, aoTerminar, duracao = 400) {
+  corte(aoTrocar, aoTerminar, duracao = 900) {
     const cam = this.cameras.main;
     cam.fadeOut(duracao, 0, 0, 0);
     cam.once('camerafadeoutcomplete', () => {
@@ -168,8 +169,8 @@ class CutsceneBoss extends Phaser.Scene {
 
         mostrarDialogo(
           this,
-          'SUN DEVOURER',
-          'Hmm... if you want something done right, you have to do it yourself...',
+          traduzir('luta4.nome'),
+          traduzir('luta4.goblin'),
           () => this.corte(() => this.passo3()),
           RETRATO_BOSS
         );
@@ -215,11 +216,11 @@ class CutsceneBoss extends Phaser.Scene {
     const fotoBoss = this.textures.get('boss-thumb').getSourceImage();
     RETRATO_BOSS.escala = 60 / Math.max(fotoBoss.width, fotoBoss.height);
 
-    mostrarDialogo(this, 'DETECTIVE', 'I came to send you back to hell.', () => {
+    mostrarDialogo(this, traduzir('nome.detetive'), traduzir('luta4.detetive'), () => {
       mostrarDialogo(
         this,
-        'SUN DEVOURER',
-        'Do your best, little human...',
+        traduzir('luta4.nome'),
+        traduzir('luta4.vilao'),
         () => this.irParaLuta(),
         RETRATO_BOSS
       );

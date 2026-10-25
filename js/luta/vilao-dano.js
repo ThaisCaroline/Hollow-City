@@ -146,6 +146,7 @@ class LutaVilaoDano {
     this.vilao.clearTint();
     this.vilao.play(nome);
     flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'POTION!');
+    this.sussurrarAlmas();   // sussurro das almas quando ela bebe a poção
     this.vilao.once('animationcomplete-' + nome, () => this.fimPocao(false));
   }
 
@@ -318,13 +319,17 @@ class LutaVilaoDano {
       cam.pan(256, 112, 400);
 
       this.time.delayedCall(450, () => {
-        if (this.cfg.dialogoDerrota) {
-          mostrarDialogo(this, this.cfg.nome, this.cfg.dialogoDerrota, antesDoKO, this.cfg.retrato);
+        if (existeTexto(`luta${this.fase + 1}.derrota`)) {
+          mostrarDialogo(this, traduzir(`luta${this.fase + 1}.nome`), traduzir(`luta${this.fase + 1}.derrota`), antesDoKO, this.cfg.retrato);
         } else {
           antesDoKO();
         }
       });
     };
+
+    // as almas: os fantasmas se apagam e sussurram uma última vez (só a bruxa tem; nas outras lutas não faz nada)
+    this.apagarFantasmas();
+    this.sussurrarAlmas();
 
     // som de morte do vilão (se a fase tiver): toca quando a animação de morte começa, antes do K.O.
     if (this.cfg.sons && this.cfg.sons.morte) tocarSom(this, this.cfg.sons.morte);

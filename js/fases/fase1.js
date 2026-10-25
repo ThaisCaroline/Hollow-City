@@ -14,6 +14,8 @@ const FASE1 = {
   escala: 1.5,               // ponto de partida; ajuste depois do teste
   espelhado: true,           // o sprite da criatura nasce virado para a esquerda
   velocidade: 50,            // pixels por segundo
+  entradaX: 600,             // ela entra andando de fora da tela: x onde ela nasce (sem isto, nasce em 500, meio dentro da tela)
+  velocidadeEntrada: 45,     // anda a 45 pixels por segundo ao entrar (sem isto, 90)
   distanciaLuta: 45,         // para de andar a essa distância do herói (ela precisa colar nele)
   distanciaAtaque: 55,       // começa um golpe a essa distância (ou menos)
   margemCorpo: 35,           // distância mínima entre os centros do herói e da criatura
@@ -59,7 +61,23 @@ const FASE1 = {
 
   // sons próprios desta fase (chaves definidas em SONS, no config.js)
   sons: {
-    dano: 'soco'             // o som do soco do herói também é o de dano da criatura
+    dano: 'soco',            // o som do soco do herói também é o de dano da criatura
+    almaInicio: 'alma-inicio',   // sussurro das almas quando a luta começa (só na primeira vez da run)
+    almaPocao: 'alma-pocao',     // quando ela bebe a poção
+    almaMorte: 'alma-morte'      // quando ela morre
+  },
+
+  // as almas que ela prendeu: fantasmas que giram atrás dela (só enfeite; ver luta/fantasmas.js)
+  fantasmas: {
+    textura: 'fantasma',
+    arquivo: 'assets/fantasma/fantasma.png',
+    quantidade: 3,
+    escala: 1.5,             // a mesma da bruxa
+    alpha: 0.4,              // opacidade média (pulsa um pouco); menor = mais transparente
+    raioX: 62,               // largura da órbita em pixels
+    raioY: 9,                // altura da órbita em pixels
+    altura: 160,             // y do centro da órbita na tela (o chão é 205)
+    velocidade: 0.45         // radianos por segundo
   },
 
   // esquiva: ela afunda numa poça escura e reaparece atrás do herói
@@ -118,6 +136,9 @@ const FASE1 = {
     cena.load.spritesheet(T.hit, S.hit, tamanho);
     cena.load.spritesheet(T.morte, S.morte, tamanho);
     cena.load.spritesheet(T.afundar, S.afundar, tamanho);
+
+    // os fantasmas que giram atrás dela
+    if (this.fantasmas) cena.load.image(this.fantasmas.textura, this.fantasmas.arquivo);
   },
 
   // cria as animações da criatura (chamado pelo create da cena de luta)

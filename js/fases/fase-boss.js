@@ -296,6 +296,7 @@ const FASE_BOSS = {
     // 2) levanta
     const levantar = () => {
       cena.vilao.play(A.levantar);
+      tocarSom(cena, 'boss-levantar');
       cena.vilao.once('animationcomplete-' + A.levantar, () => {
         cena.time.delayedCall(X.pausaAntesPowerup, powerup);
       });

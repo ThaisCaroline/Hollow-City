@@ -1,9 +1,6 @@
 // Abertura: 3 telas mostradas depois do nome e antes do mapa (como o detetive chegou até aqui).
-// Cada tela tem uma imagem (assets/abertura/abertura-N.png), um texto (opcional) e uma duração.
+// Cada tela tem uma imagem (assets/abertura/abertura-N.png), um texto (opcional, pelo identificador em textos.js) e uma duração.
 // Toque ou Enter avança; depois da última tela o jogo abre o mapa.
-// Os textos estão em inglês e em português; por enquanto o jogo mostra só o inglês (IDIOMA_ABERTURA).
-
-const IDIOMA_ABERTURA = 'en';   // trocar para 'pt' quando o jogo passar a ter suporte a idiomas
 
 const SLIDES_ABERTURA = [
   {
@@ -12,18 +9,12 @@ const SLIDES_ABERTURA = [
   },
   {
     imagem: 'assets/abertura/abertura-2.png',
-    texto: {
-      en: 'They took the sun, then my neighbors.\nSomeone is giving the orders.',
-      pt: 'Levaram o sol, depois os meus vizinhos.\nAlguém está dando as ordens.'
-    },
+    texto: 'abertura.2',
     duracao: 5200
   },
   {
     imagem: 'assets/abertura/abertura-3.png',
-    texto: {
-      en: 'Tonight, it ends.',
-      pt: 'Esta noite, isso acaba.'
-    },
+    texto: 'abertura.3',
     duracao: 4200
   }
 ];
@@ -97,8 +88,8 @@ class Abertura extends Phaser.Scene {
         .setDepth(0.5);
     }
 
-    // texto na língua escolhida; telas sem texto ficam sem faixa
-    const texto = slide.texto ? slide.texto[IDIOMA_ABERTURA] : '';
+    // texto no idioma atual; telas sem texto ficam sem faixa
+    const texto = slide.texto ? traduzir(slide.texto) : '';
     this.textoSlide.setText(texto);
     this.textoSlide.setAlpha(0);
     this.faixa.setAlpha(0);

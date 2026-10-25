@@ -63,6 +63,12 @@ const SONS = {
   'boss-dano': 'assets/audio/hurtboss.WAV',
   'boss-morte': 'assets/audio/monster death deep.wav',
   'boss-powerup': 'assets/audio/power-upboss.WAV',
+  'boss-levantar': 'assets/audio/boss-levantar.wav',
+
+  // almas presas pela bruxa (luta 1): sussurros no início da luta, na poção e na morte dela
+  'alma-inicio': 'assets/audio/alma-1.wav',
+  'alma-pocao': 'assets/audio/alma-2.wav',
+  'alma-morte': 'assets/audio/alma-3.wav',
 
   // PERFECT (todas as lutas)
   'perfect': 'assets/audio/perfect.ogg',

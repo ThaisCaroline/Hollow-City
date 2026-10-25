@@ -45,6 +45,9 @@ class CenaLuta extends Phaser.Scene {
       this.fundo.y = this.cfg.cenarioAjusteY || 0;   // ajuste de altura do cenário, aplicado em toda tentativa
     }
     
+    // o cenário fica atrás de tudo; os fantasmas ficam entre o cenário e os lutadores (ver luta/fantasmas.js)
+    this.fundo.setDepth(-10);
+
     // garante o estado normal ao reiniciar a luta
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
@@ -54,6 +57,9 @@ class CenaLuta extends Phaser.Scene {
 
     // animações do herói (luta/heroi.js)
     this.criarAnimacoesHeroi();
+
+    // fantasmas da fase (a bruxa): criados antes do herói e do vilão, para ficarem atrás dos dois
+    this.criarFantasmas();
 
     // a entrada do herói e os diálogos acontecem na primeira vez que cada fase é jogada
     const jaVista = (this.game.fasesVistas || {})[this.fase];
@@ -186,7 +192,7 @@ class CenaLuta extends Phaser.Scene {
     this.heroi.stop();
     this.heroi.setFrame(0);
 
-    mostrarDialogo(this, 'DETECTIVE', this.cfg.dialogoHeroi, () => this.chegaVilao(), RETRATO_HEROI);
+    mostrarDialogo(this, traduzir('nome.detetive'), traduzir(`luta${this.fase + 1}.detetive`), () => this.chegaVilao(), RETRATO_HEROI);
   }
 
   // o vilão entra pela direita e fala antes da luta
@@ -206,19 +212,20 @@ class CenaLuta extends Phaser.Scene {
       });
     }
 
+    const origemX = this.cfg.entradaX || 500;   // de onde ele nasce (uma fase pode pedir para entrar de fora da tela)
     this.vilao.setVisible(true);
-    this.vilao.x = 500;
+    this.vilao.x = origemX;
     this.virarVilao(true); // olha para a esquerda, para o herói
     this.vilao.play(this.cfg.anims.andar, true);
 
     this.tweens.add({
       targets: this.vilao,
       x: 360,
-      duration: 1600,
+      duration: ((origemX - 360) / (this.cfg.velocidadeEntrada || 90)) * 1000,   // pixels por segundo (90, ou o que a fase pedir)
       ease: 'Linear',
       onComplete: () => {
         this.vilaoParado();
-        mostrarDialogo(this, this.cfg.nome, this.cfg.dialogoVilao, () => this.comecarCombate(), this.cfg.retrato);
+        mostrarDialogo(this, traduzir(`luta${this.fase + 1}.nome`), traduzir(`luta${this.fase + 1}.vilao`), () => this.comecarCombate(), this.cfg.retrato);
       }
     });
   }
@@ -236,7 +243,11 @@ class CenaLuta extends Phaser.Scene {
 
     // marca a fase como vista, para a entrada não se repetir nas tentativas seguintes
     this.game.fasesVistas = this.game.fasesVistas || {};
+    const primeiraVez = !this.game.fasesVistas[this.fase];
     this.game.fasesVistas[this.fase] = true;
+
+    // sussurro das almas, só na primeira vez que a luta começa na run (se o herói perder e tentar de novo, não repete)
+    if (primeiraVez) this.sussurrarAlmas();
 
     this.vilao.setVisible(true);
     this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
@@ -272,6 +283,8 @@ class CenaLuta extends Phaser.Scene {
   // ---------- loop principal ----------
 
   update(tempo, delta) {
+    this.atualizarFantasmas(delta);   // giram e flutuam também durante a entrada e os diálogos
+
     // entrada e diálogos: o herói anda e pode testar os botões; o vilão ainda não age
     if (this.emEntrada) {
       this.atualizarEntrada(delta);
@@ -397,7 +410,7 @@ function misturarNaCena(...origens) {
   }
 }
 
-misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano);
+misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano, LutaFantasmas);
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -409,5 +422,5 @@ window.game = new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final, CutsceneBoss, Bestiario, Abertura]
+  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final, CutsceneBoss, Bestiario, Abertura]
 });

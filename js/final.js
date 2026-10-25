@@ -79,6 +79,13 @@ class Final extends Phaser.Scene {
     this.musica = this.sound.add('final-music', { loop: true, volume: 0.9 });
     this.musica.play();
 
+    // a música de fundo do jogo para (com fade) enquanto o final toca a própria; volta quando o final termina
+    const fundoDoJogo = this.game.musicaFundo;
+    const volumeFundo = fundoDoJogo ? fundoDoJogo.volume : 0;
+    if (fundoDoJogo && fundoDoJogo.isPlaying) {
+      this.tweens.add({ targets: fundoDoJogo, volume: 0, duration: 800, onComplete: () => fundoDoJogo.pause() });
+    }
+
     // fundo de cor (aparece quando o slide não tem imagem)
     this.fundo = this.add.rectangle(0, 0, 512, 224, 0x000000).setOrigin(0, 0).setDepth(0);
 
@@ -110,6 +117,10 @@ class Final extends Phaser.Scene {
       this.input.keyboard.off('keydown-ENTER');
       if (this.timer) this.timer.remove();
       if (this.musica) this.musica.stop();
+      if (fundoDoJogo) {
+        fundoDoJogo.setVolume(volumeFundo);
+        fundoDoJogo.resume();
+      }
     });
 
     this.mostrarSlide(0);
