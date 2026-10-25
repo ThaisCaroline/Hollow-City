@@ -7,6 +7,23 @@ const CURA_PISCA_MS = 120;            // tempo de cada piscada
 const CURA_PISCADAS = 8;              // mudanças de cor no brilho (~1 s)
 
 class LutaVilaoDano {
+  // o estado do dano, da fúria e da poção do vilão no começo de cada luta (chamado pelo create)
+  iniciarEstadoDano() {
+    this.vilaoEmFuria = false;     // true depois que o lobisomem entra na fúria (vermelho, mais rápido)
+    this.furiaTransicao = false;   // true enquanto ele uiva e pisca em vermelho, parado
+    this.vilaoFlashAte = 0;        // até quando dura o flash de dano (a cor da fúria espera ele acabar)
+    this.vilaoAnimando = false;    // true enquanto toca o dano ou o pouso do pisão (nada interrompe)
+    this.vilaoProximoHit = 0;      // quando o vilão pode mostrar a animação de dano de novo (ms)
+    this.vilaoBebendo = false;     // true enquanto ele bebe a poção de cura
+    this.vilaoPocaoUsada = false;  // a poção só é bebida uma vez por luta (mesmo se for interrompida)
+    this.vilaoGolpesNaPocao = 0;   // golpes recebidos enquanto bebe
+    this.curaBrilho = false;       // true durante o brilho verde da poção (usado também pela barra de vida)
+    this.curaPiscaOn = false;      // alterna a cor verde durante o brilho
+    this.vilaoVidaAntesCura = 0;   // vida antes da cura, para a barra mostrar o pedaço recuperado
+    this.vilaoVida = this.cfg.vida;
+    this.vilaoVidaMax = this.cfg.vida;
+  }
+
   causarDano() {
     // no modo virada, o soco tira mais vida do vilão; o soco inglês aumenta os dois (valores em luta/heroi.js)
     const ingles = this.temSocoIngles();

@@ -4,6 +4,29 @@
 const COR_CHAMA = 0xff9a2e;   // laranja da silhueta do piscar em chamas
 
 class LutaVilaoGolpes {
+  // o estado dos golpes e do movimento do vilão no começo de cada luta (chamado pelo create)
+  iniciarEstadoVilao() {
+    this.vilaoAtacando = false;
+    this.vilaoEsquivando = false;
+    this.vilaoInvulneravel = false;
+    this.vilaoProximoAtaque = 0;
+    this.vilaoProximaEsquiva = 0;
+    this.vilaoBloqueando = false;  // true enquanto o ogro está de braços cruzados (soco e chute não causam dano)
+    this.vilaoProximoBloqueio = 0; // quando o ogro pode bloquear de novo (ms)
+    this.vilaoNoAr = false;        // true enquanto o vilão pula (pisão do ogro)
+    this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
+    this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
+    this.vilaoInvestindo = false;  // true enquanto o lobisomem corre na investida (atravessa o herói)
+    this.vilaoProximaInvestida = 0; // quando o lobisomem pode investir de novo (ms)
+    this.cicloIdx = 0;             // posição no ciclo de golpes da fase (o boss da fase 2)
+    this.vilaoRecuando = false;    // true enquanto o boss anda para trás para ganhar distância e lançar a bola (fase 2)
+    this.vilaoAltura = 0;
+    this.vilaoVelY = 0;
+    this.golpeAtual = null;
+    this.golpeAtualNome = null;
+    this.bolas = [];             // bolas de fogo do boss em voo
+  }
+
   // quando uma bala aparece, o vilão tenta pular para desviar (só nas fases com desvioTiro, como a do ogro); cada tentativa inicia o cooldown
   tentarDesviarTiro() {
     const d = this.cfg.desvioTiro;
@@ -594,8 +617,6 @@ class LutaVilaoGolpes {
   }
 
   // animação de andar: a triste quando a vida está baixa (se a fase tiver)
-
-
   animacaoAndar() {
     const a = this.cfg.anims;
     const baixa = this.cfg.vidaBaixa;

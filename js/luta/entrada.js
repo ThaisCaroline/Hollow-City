@@ -2,6 +2,13 @@
 // Os métodos são copiados para a CenaLuta no game.js, então o this é a cena.
 
 class LutaEntrada {
+  // o estado da entrada e dos diálogos no começo de cada luta (chamado pelo create)
+  iniciarEstadoEntrada(comEntrada) {
+    this.emEntrada = comEntrada; // true enquanto o herói entra e os diálogos acontecem
+    this.emDialogo = false;
+    this.emCombate = false;      // só fica true quando o vilão passa a agir e a receber dano
+  }
+
   // o herói anda pela esquerda até o meio da tela; a cidade rola junto, mais devagar
   atualizarEntrada(delta) {
     if (this.emDialogo) return;

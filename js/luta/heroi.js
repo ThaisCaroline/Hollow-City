@@ -28,6 +28,39 @@ const COR_BALA = 0xffd23f;            // bala comum: amarela
 const COR_BALA_PRATA = 0xe8eef6;      // bala de prata
 
 class LutaHeroi {
+  // o estado do herói no começo de cada luta (chamado pelo create)
+  iniciarEstadoHeroi() {
+    this.heroiAtacando = false;
+    this.heroiMorrendo = false;
+    this.heroiNoAr = false;
+    this.heroiAltura = 0;
+    this.velocidadeY = 0;
+    this.heroiAgachado = false;
+    this.heroiBloqueado = false; // true quando a regra de corpo impediu o herói de andar neste quadro
+    this.ladoHeroi = -1;         // de que lado do vilão o herói está (-1 = à esquerda, 1 = à direita)
+    this.proximoSoco = 0;        // quando o herói pode socar de novo (ms)
+    this.proximoTiro = 0;        // quando o herói pode atirar de novo (ms)
+    this.puloPendenteAte = 0;    // até quando um toque no pulo fica guardado (ms)
+    this.pulouNoAviso = false;   // true se o herói pulou durante o aviso do golpe atual
+    this.combo = 0;              // quantos ataques seguidos o herói encadeou
+    this.comboAte = 0;           // até quando o próximo ataque ainda entra no combo (ms)
+    this.heroiVida = VIDA_HEROI;
+    // PERFECT: vira true assim que o herói leva qualquer dano; já começa true se a luta recomeça direto na fase 2 do boss (a luta inteira não foi jogada)
+    this.heroiLevouDano = !!this.cfg.recomecarAqui;
+    this.emVirada = false;   // modo virada: o herói está abaixo de 30% de vida
+    this.piscaOn = false;    // alterna a cor da barra do herói no modo virada
+    this.socoAcertou = false;
+
+    // tiro: munição volta ao máximo a cada tentativa, e as balas ficam nesta lista
+    this.tiros = [];
+    this.viradaEvento = null;    // o piscar da barra no modo virada (a poção desliga)
+    this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
+    this.textoMunicao = this.cfg.tiro
+      ? this.add.text(12, 38, '', { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 3 }).setDepth(21)
+      : null;
+    this.atualizarMunicao();
+  }
+
   // o herói já está com o soco inglês nesta luta?
   temSocoIngles() {
     return this.fase >= SOCO_INGLES_LUTA;
@@ -315,7 +348,7 @@ class LutaHeroi {
     });
   }
 
-// os dois se olham, não se atravessam no chão e não saem da tela (chamado pelo update, depois do vilão)
+  // os dois se olham, não se atravessam no chão e não saem da tela (chamado pelo update, depois do vilão)
   ajustarCorpos() {
     this.heroi.setFlipX(this.vilao.x < this.heroi.x);
 
@@ -348,7 +381,6 @@ class LutaHeroi {
   }
 
   // botões do herói: soco, tiro, agachar, pulo e gravidade. Funcionam na entrada e na luta.
-
   acoesDoHeroi(delta) {
     const passo = (velocidade) => (velocidade * delta) / 1000;
 

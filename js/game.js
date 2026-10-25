@@ -67,20 +67,7 @@ class CenaLuta extends Phaser.Scene {
 
     this.heroi = this.add.sprite(comEntrada ? 40 : (this.cfg.inicioHeroi || 150), CHAO_Y, 'heroi-andar').setOrigin(0.5, HEROI_ORIGEM_Y).setScale(2);
     this.heroi.setFrame(0);
-    this.heroiAtacando = false;
-    this.heroiMorrendo = false;
-    this.heroiNoAr = false;
-    this.heroiAltura = 0;
-    this.velocidadeY = 0;
-    this.heroiAgachado = false;
-    this.heroiBloqueado = false; // true quando a regra de corpo impediu o herói de andar neste quadro
-    this.ladoHeroi = -1;         // de que lado do vilão o herói está (-1 = à esquerda, 1 = à direita)
-    this.proximoSoco = 0;        // quando o herói pode socar de novo (ms)
-    this.proximoTiro = 0;        // quando o herói pode atirar de novo (ms)
-    this.puloPendenteAte = 0;    // até quando um toque no pulo fica guardado (ms)
-    this.pulouNoAviso = false;   // true se o herói pulou durante o aviso do golpe atual
-    this.combo = 0;              // quantos ataques seguidos o herói encadeou
-    this.comboAte = 0;           // até quando o próximo ataque ainda entra no combo (ms)
+    this.iniciarEstadoHeroi();   // flags, vida, munição e tiros do herói (luta/heroi.js)
 
     this.vilao = this.add.sprite(this.cfg.inicioVilao || 360, CHAO_Y + (this.cfg.descerVilao || 0), this.cfg.texturas.parado).setOrigin(0.5, 1).setScale(this.cfg.escala);
     this.vilao.setFrame(0);
@@ -90,58 +77,10 @@ class CenaLuta extends Phaser.Scene {
     this.vilao.on('animationstart', (anim, frame) => this.ajustarOrigemVilao(frame.textureKey));
     this.ajustarOrigemVilao(this.cfg.texturas.parado);
 
-    this.vilaoAtacando = false;
-    this.vilaoEsquivando = false;
-    this.vilaoInvulneravel = false;
-    this.vilaoProximoAtaque = 0;
-    this.vilaoProximaEsquiva = 0;
-    this.vilaoBloqueando = false;  // true enquanto o ogro está de braços cruzados (soco e chute não causam dano)
-    this.vilaoProximoBloqueio = 0; // quando o ogro pode bloquear de novo (ms)
-    this.vilaoNoAr = false;        // true enquanto o vilão pula (pisão do ogro)
-    this.vilaoDesviando = false;   // true enquanto o pulo é um desvio de tiro
-    this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
-    this.vilaoInvestindo = false;  // true enquanto o lobisomem corre na investida (atravessa o herói)
-    this.vilaoProximaInvestida = 0; // quando o lobisomem pode investir de novo (ms)
-    this.cicloIdx = 0;             // posição no ciclo de golpes da fase (o boss da fase 2)
-    this.vilaoRecuando = false;    // true enquanto o boss anda para trás para ganhar distância e lançar a bola (fase 2)
-    this.vilaoEmFuria = false;     // true depois que o lobisomem entra na fúria (vermelho, mais rápido)
-    this.furiaTransicao = false;   // true enquanto ele uiva e pisca em vermelho, parado
-    this.vilaoFlashAte = 0;        // até quando dura o flash de dano (a cor da fúria espera ele acabar)
-    this.vilaoAltura = 0;
-    this.vilaoVelY = 0;
-    this.vilaoAnimando = false;    // true enquanto toca o dano ou o pouso do pisão (nada interrompe)
-    this.vilaoProximoHit = 0;      // quando o vilão pode mostrar a animação de dano de novo (ms)
-    this.vilaoBebendo = false;     // true enquanto ele bebe a poção de cura
-    this.vilaoPocaoUsada = false;  // a poção só é bebida uma vez por luta (mesmo se for interrompida)
-    this.vilaoGolpesNaPocao = 0;   // golpes recebidos enquanto bebe
-    this.curaBrilho = false;       // true durante o brilho verde da poção (usado também pela barra de vida)
-    this.curaPiscaOn = false;      // alterna a cor verde durante o brilho
-    this.vilaoVidaAntesCura = 0;   // vida antes da cura, para a barra mostrar o pedaço recuperado
-    this.golpeAtual = null;
-    this.golpeAtualNome = null;
-
-    this.heroiVida = VIDA_HEROI;
-    // PERFECT: vira true assim que o herói leva qualquer dano; já começa true se a luta recomeça direto na fase 2 do boss (a luta inteira não foi jogada)
-    this.heroiLevouDano = !!this.cfg.recomecarAqui;
-    this.vilaoVida = this.cfg.vida;
-    this.vilaoVidaMax = this.cfg.vida;
+    this.iniciarEstadoVilao();    // golpes e movimento do vilão (luta/vilao-golpes.js)
+    this.iniciarEstadoDano();     // vida, fúria e poção do vilão (luta/vilao-dano.js)
+    this.iniciarEstadoEntrada(comEntrada);   // entrada e diálogos (luta/entrada.js)
     this.fimDeJogo = false;
-    this.emVirada = false;   // modo virada: o herói está abaixo de 30% de vida
-    this.piscaOn = false;    // alterna a cor da barra do herói no modo virada
-    this.socoAcertou = false;
-    this.emEntrada = comEntrada; // true enquanto o herói entra e os diálogos acontecem
-    this.emDialogo = false;
-    this.emCombate = false;      // só fica true quando o vilão passa a agir e a receber dano
-
-    // tiro: munição volta ao máximo a cada tentativa, e as balas ficam nesta lista
-    this.tiros = [];
-    this.bolas = [];             // bolas de fogo do boss em voo
-    this.viradaEvento = null;    // o piscar da barra no modo virada (a poção desliga)
-    this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
-    this.textoMunicao = this.cfg.tiro
-      ? this.add.text(12, 38, '', { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 3 }).setDepth(21)
-      : null;
-    this.atualizarMunicao();
 
     this.teclas = this.input.keyboard.createCursorKeys();
     this.teclaSoco = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
