@@ -52,6 +52,10 @@ class CenaLuta extends Phaser.Scene {
     this.anims.globalTimeScale = 1;
     this.cameras.main.setZoom(1);
 
+    // música de fundo: a fase pode pedir outra velocidade (a fase 2 do boss); ao sair da luta, volta ao normal
+    mudarVelocidadeMusica(this, this.cfg.musicaVelocidade || 1);
+    this.events.once('shutdown', () => mudarVelocidadeMusica(this, 1));
+
     // cores e animações do vilão ficam na configuração da fase
     this.cfg.preparar(this);
 

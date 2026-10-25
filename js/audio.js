@@ -42,3 +42,17 @@ function tocarMusica(cena, nome, volume = 0.3) {
     tocar();
   }
 }
+
+// muda a velocidade da música de fundo (1 = normal). Com duracao (ms) a mudança é gradual; sem ela, é na hora.
+// A velocidade também sobe o tom da música, como numa fita.
+function mudarVelocidadeMusica(cena, velocidade, duracao = 0) {
+  const musica = cena.game.musicaFundo;
+  if (!musica) return;
+
+  if (!duracao) {
+    musica.setRate(velocidade);
+    return;
+  }
+
+  cena.tweens.add({ targets: musica, rate: velocidade, duration: duracao, ease: 'Sine.easeInOut' });
+}

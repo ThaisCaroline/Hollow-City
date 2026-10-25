@@ -326,6 +326,7 @@ const FASE_BOSS = {
       cena.vilaoVidaMax = P.vida;
       cena.vilaoVida = 0;
       cena.vilaoParado();         // idle do boneco novo
+      mudarVelocidadeMusica(cena, P.musicaVelocidade || 1, X.enchimentoBarra);   // a música acelera enquanto a barra enche
       desenharBarras(cena);
 
       const barra = { v: 0 };
@@ -427,6 +428,7 @@ const FASE_BOSS_2 = {
   transicao: null,            // a fase 2 não tem transição: quando a vida zera, a luta termina de verdade (K.O. e ranking)
   proximaFase: null,
   recomecarAqui: true,        // se o herói morrer na fase 2, o PLAY AGAIN volta direto nela (sem a fase 1 e sem a transição)
+  musicaVelocidade: 1.15,     // a música de fundo fica 15% mais rápida na fase 2 (mais tensão)
 
   // carrega os sheets do boneco novo (usado quando a luta recomeça direto na fase 2; no caminho normal o FASE_BOSS já carregou tudo)
   carregar(cena) {
