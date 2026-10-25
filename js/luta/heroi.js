@@ -315,7 +315,40 @@ class LutaHeroi {
     });
   }
 
+// os dois se olham, não se atravessam no chão e não saem da tela (chamado pelo update, depois do vilão)
+  ajustarCorpos() {
+    this.heroi.setFlipX(this.vilao.x < this.heroi.x);
+
+    // corpos: no chão, o herói e o vilão não se sobrepõem nem trocam de lado.
+    // No ar, acima da altura de passagem, o herói pode cruzar por cima do vilão.
+    // Na investida, o lobisomem atravessa o herói: a regra fica desligada até ele parar.
+    const margem = this.cfg.margemCorpo || 30;
+    const passagem = this.cfg.alturaPassagem || 40;
+    const xAntesRegra = this.heroi.x;
+
+    if (this.heroiAltura < passagem && !this.vilaoInvestindo) {
+      const dx = this.heroi.x - this.vilao.x;
+      if (Math.abs(dx) >= 1) this.ladoHeroi = Math.sign(dx);
+
+      if (this.ladoHeroi < 0) {
+        this.heroi.x = Math.min(this.heroi.x, this.vilao.x - margem);
+        this.vilao.x = Math.max(this.vilao.x, this.heroi.x + margem);
+      } else {
+        this.heroi.x = Math.max(this.heroi.x, this.vilao.x + margem);
+        this.vilao.x = Math.min(this.vilao.x, this.heroi.x - margem);
+      }
+    }
+
+    // a regra de corpo travou o herói neste quadro? usado pela animação de andar no próximo quadro
+    this.heroiBloqueado = Math.abs(this.heroi.x - xAntesRegra) > 0.01;
+
+    // não deixa sair da tela
+    this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 480);
+    this.vilao.x = Phaser.Math.Clamp(this.vilao.x, 32, 480);
+  }
+
   // botões do herói: soco, tiro, agachar, pulo e gravidade. Funcionam na entrada e na luta.
+
   acoesDoHeroi(delta) {
     const passo = (velocidade) => (velocidade * delta) / 1000;
 

@@ -1,6 +1,6 @@
 // A cena de luta: herói, vilão e o loop principal.
 // Constantes ficam em config.js; cores em recolor.js; barras e textos em hud.js; botões em controles.js; sons em audio.js; diálogos em dialogo.js.
-// O herói fica em luta/heroi.js; os itens que o herói pega e usa (poção, soco inglês) em luta/pocao-heroi.js; os golpes, a bola de fogo, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
+// O herói fica em luta/heroi.js; os itens que o herói pega e usa (poção, soco inglês) em luta/pocao-heroi.js; a entrada, os diálogos e o começo do combate em luta/entrada.js; os golpes, a bola de fogo, o bloqueio e a esquiva do vilão em luta/vilao-golpes.js; o dano, a poção e o K.O. do vilão em luta/vilao-dano.js.
 // Cada fase (fases/fase1.js, fases/fase2.js, fases/fase3.js, fases/fase-boss.js) traz seus próprios textos, sons, sprites, animações, golpes, vida, movimento, esquiva, morte e cenário.
 
 // ordem das lutas no caminho: criatura, ogro, lobisomem, boss final
@@ -154,120 +154,6 @@ class CenaLuta extends Phaser.Scene {
     if (!comEntrada) this.comecarCombate();
   }
 
-  // ---------- entrada e diálogos ----------
-
-  // o herói anda pela esquerda até o meio da tela; a cidade rola junto, mais devagar
-  atualizarEntrada(delta) {
-    if (this.emDialogo) return;
-
-    const passo = (velocidade) => (velocidade * delta) / 1000;
-    const esquerda = this.teclas.left.isDown || this.toque.esquerda;
-    const direita = this.teclas.right.isDown || this.toque.direita;
-
-    const xAntes = this.heroi.x;
-    if (!this.heroiAtacando && !this.heroiAgachado) {
-      if (direita) this.heroi.x += passo(VELOCIDADE_HEROI);
-      else if (esquerda) this.heroi.x -= passo(VELOCIDADE_HEROI);
-      this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 256);
-
-      if (!this.heroiNoAr) {
-        if (esquerda || direita) {
-          this.heroi.play('heroi-andar', true);
-          this.heroi.setFlipX(esquerda && !direita);
-        } else {
-          this.heroi.stop();
-          this.heroi.setFrame(0);
-        }
-      }
-    }
-
-    this.fundo.tilePositionX += (this.heroi.x - xAntes) * 0.5;
-
-    // chegou ao meio da tela: para e começa o diálogo
-    if (this.heroi.x >= 256) this.iniciarDialogoHeroi();
-  }
-
-  iniciarDialogoHeroi() {
-    this.emDialogo = true;
-    this.heroi.stop();
-    this.heroi.setFrame(0);
-
-    mostrarDialogo(this, traduzir('nome.detetive'), traduzir(`luta${this.fase + 1}.detetive`), () => this.chegaVilao(), RETRATO_HEROI);
-  }
-
-  // o vilão entra pela direita e fala antes da luta
-  chegaVilao() {
-    // uivo da entrada (só o lobo tem): toca quando ele começa a entrar, antes do diálogo dele.
-    // O arquivo tem 7,4 s: toca só os primeiros ~3 s, com fade-out (começa em 2,2 s e dura 0,8 s)
-    if (this.cfg.sons && this.cfg.sons.entrada && this.cache.audio.exists(this.cfg.sons.entrada)) {
-      const uivo = this.sound.add(this.cfg.sons.entrada, { volume: 0.9 });
-      uivo.play();
-      this.time.delayedCall(2200, () => {
-        this.tweens.add({
-          targets: uivo,
-          volume: 0,
-          duration: 800,
-          onComplete: () => uivo.destroy()
-        });
-      });
-    }
-
-    const origemX = this.cfg.entradaX || 500;   // de onde ele nasce (uma fase pode pedir para entrar de fora da tela)
-    this.vilao.setVisible(true);
-    this.vilao.x = origemX;
-    this.virarVilao(true); // olha para a esquerda, para o herói
-    this.vilao.play(this.cfg.anims.andar, true);
-
-    this.tweens.add({
-      targets: this.vilao,
-      x: 360,
-      duration: ((origemX - 360) / (this.cfg.velocidadeEntrada || 90)) * 1000,   // pixels por segundo (90, ou o que a fase pedir)
-      ease: 'Linear',
-      onComplete: () => {
-        this.vilaoParado();
-        mostrarDialogo(this, traduzir(`luta${this.fase + 1}.nome`), traduzir(`luta${this.fase + 1}.vilao`), () => this.comecarCombate(), this.cfg.retrato);
-      }
-    });
-  }
-
-  // a luta começa: barra de vida na tela e o fundo para de rolar
-  comecarCombate() {
-    this.emEntrada = false;
-    this.emDialogo = false;
-    this.emCombate = true;           // a partir daqui o vilão age e recebe dano
-    this.inicioLuta = this.time.now; // começa o cronômetro desta tentativa
-
-    // munição cheia no começo do combate (os tiros de teste da entrada não contam)
-    this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
-    this.atualizarMunicao();
-
-    // marca a fase como vista, para a entrada não se repetir nas tentativas seguintes
-    this.game.fasesVistas = this.game.fasesVistas || {};
-    const primeiraVez = !this.game.fasesVistas[this.fase];
-    this.game.fasesVistas[this.fase] = true;
-
-    // sussurro das almas, só na primeira vez que a luta começa na run (se o herói perder e tentar de novo, não repete)
-    if (primeiraVez) this.sussurrarAlmas();
-
-    this.vilao.setVisible(true);
-    this.vilaoProximoAtaque = this.time.now + 1500; // primeiro golpe depois de 1,5 s
-    this.vilaoProximaEsquiva = this.time.now + this.cfg.primeiraEsquiva;
-    if (this.cfg.bloqueio) this.vilaoProximoBloqueio = this.time.now + this.cfg.bloqueio.primeiro;
-    if (this.cfg.golpes && this.cfg.golpes.investida) this.vilaoProximaInvestida = this.time.now + this.cfg.golpes.investida.primeira;
-
-    criarBarrasDeVida(this);
-
-    // cronômetro da luta, no topo da tela
-    this.textoTimer = this.add.text(256, 36, '00:00.00', {
-      fontFamily: 'monospace',
-      fontSize: '16px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 4
-    }).setOrigin(0.5, 0).setDepth(21);
-  }
-
   // grava o tempo da luta vencida no ranking da fase, com a data da vitória e o identificador da run
   registrarTempo() {
     db.collection('ranking').add({
@@ -309,95 +195,11 @@ class CenaLuta extends Phaser.Scene {
     this.atualizarBolas(delta);
     if (this.fimDeJogo) return;
 
-    // pulo do vilão (pisão do ogro): sobe, cai e chama o pouso
-    if (this.vilaoNoAr) {
-      this.vilaoVelY += GRAVIDADE * (delta / 1000);
-      this.vilaoAltura -= this.vilaoVelY * (delta / 1000);
-      if (this.vilaoAltura <= 0) this.vilaoAterrissa();
-    }
-    this.vilao.y = CHAO_Y + (this.cfg.descerVilao || 0) - this.vilaoAltura;
+    // vilão: pulo, investida, decisão e movimento (luta/vilao-golpes.js)
+    if (!this.atualizarVilao(delta)) return;
 
-    // investida do lobisomem: corre até passar do herói
-    if (this.vilaoInvestindo) this.atualizarInvestida(delta);
-    if (this.fimDeJogo) return;
-
-    // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
-    // A velocidade, as distâncias e os golpes vêm da fase de cada vilão
-    const passo = (velocidade) => (velocidade * delta) / 1000;
-    const distancia = Math.abs(this.vilao.x - this.heroi.x);
-    const direcao = this.heroi.x < this.vilao.x ? -1 : 1;
-
-    if (this.vilaoEsquivando) {
-      // a animação de afundar e surgir cuida de tudo
-    } else if (this.vilaoBebendo) {
-      // bebendo a poção: parado e vulnerável até a animação acabar ou ser interrompida
-    } else if (this.vilaoBloqueando) {
-      // de braços cruzados: parado até o fim do bloqueio; o pisão vem logo depois
-    } else if (this.vilaoAtacando) {
-      // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
-    } else if (this.vilaoAnimando) {
-      // animação de dano ou de pouso em andamento: não trocar de animação nem andar
-    } else if (this.vilaoDesviando) {
-      // pulando para desviar de tiro: a animação do pulo cuida de tudo até ele pousar
-    } else if (this.vilaoRecuando) {
-      // boss da fase 2 recuando: anda para trás até poder lançar a bola (ou ficar encurralado na borda)
-      this.atualizarRecuo(delta);
-    } else if (this.podeEntrarEmFuria()) {
-      this.entrarEmFuria();
-    } else if (this.podeBeberPocao()) {
-      this.vilaoBeber();
-    } else if (this.podeBloquear()) {
-      this.vilaoParado();
-      this.vilaoBloquear();
-    } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
-      this.vilaoParado();
-      this.vilaoAtacar();
-    } else if (this.podeAtirarBola()) {
-      this.vilaoParado();
-      this.vilaoAtacar({ nome: 'bola', golpe: this.cfg.golpes.bola });
-    } else if (this.podeInvestir()) {
-      this.vilaoParado();
-      this.vilaoAtacar({ nome: 'investida', golpe: this.cfg.golpes.investida });
-    } else if (distancia > this.cfg.distanciaLuta) {
-      this.vilao.x += direcao * passo(this.cfg.velocidade * this.multFuria('velocidade'));
-      this.vilao.play(this.animacaoAndar(), true);
-    } else {
-      this.vilaoParado();
-    }
-
-    // fúria do lobisomem: o corpo continua vermelho depois dos avisos e dos flashes de dano
-    this.manterCorFuria();
-
-    // os dois sempre de frente um para o outro
-    if (!this.vilaoAtacando) this.virarVilao(this.heroi.x < this.vilao.x);
-    this.heroi.setFlipX(this.vilao.x < this.heroi.x);
-
-    // corpos: no chão, o herói e o vilão não se sobrepõem nem trocam de lado.
-    // No ar, acima da altura de passagem, o herói pode cruzar por cima do vilão.
-    // Na investida, o lobisomem atravessa o herói: a regra fica desligada até ele parar.
-    const margem = this.cfg.margemCorpo || 30;
-    const passagem = this.cfg.alturaPassagem || 40;
-    const xAntesRegra = this.heroi.x;
-
-    if (this.heroiAltura < passagem && !this.vilaoInvestindo) {
-      const dx = this.heroi.x - this.vilao.x;
-      if (Math.abs(dx) >= 1) this.ladoHeroi = Math.sign(dx);
-
-      if (this.ladoHeroi < 0) {
-        this.heroi.x = Math.min(this.heroi.x, this.vilao.x - margem);
-        this.vilao.x = Math.max(this.vilao.x, this.heroi.x + margem);
-      } else {
-        this.heroi.x = Math.max(this.heroi.x, this.vilao.x + margem);
-        this.vilao.x = Math.min(this.vilao.x, this.heroi.x - margem);
-      }
-    }
-
-    // a regra de corpo travou o herói neste quadro? usado pela animação de andar no próximo quadro
-    this.heroiBloqueado = Math.abs(this.heroi.x - xAntesRegra) > 0.01;
-
-    // não deixa sair da tela
-    this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 480);
-    this.vilao.x = Phaser.Math.Clamp(this.vilao.x, 32, 480);
+    // herói de frente para o vilão, regra de corpo e limites da tela (luta/heroi.js)
+    this.ajustarCorpos();
   }
 }
 
@@ -410,7 +212,7 @@ function misturarNaCena(...origens) {
   }
 }
 
-misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano, LutaFantasmas);
+misturarNaCena(LutaHeroi, LutaPocaoHeroi, LutaVilaoGolpes, LutaVilaoDano, LutaFantasmas, LutaEntrada);
 
 window.game = new Phaser.Game({
   type: Phaser.AUTO,

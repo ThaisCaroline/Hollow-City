@@ -525,7 +525,77 @@ class LutaVilaoGolpes {
     this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
   }
 
+  // o vilão a cada quadro: o pulo (pisão), a investida e a decisão do que fazer (esquivar, beber, bloquear, atacar ou andar).
+  // Devolve false se a luta acabou no meio (o update para aqui), e true se segue
+  atualizarVilao(delta) {
+    // pulo do vilão (pisão do ogro): sobe, cai e chama o pouso
+    if (this.vilaoNoAr) {
+      this.vilaoVelY += GRAVIDADE * (delta / 1000);
+      this.vilaoAltura -= this.vilaoVelY * (delta / 1000);
+      if (this.vilaoAltura <= 0) this.vilaoAterrissa();
+    }
+    this.vilao.y = CHAO_Y + (this.cfg.descerVilao || 0) - this.vilaoAltura;
+
+    // investida do lobisomem: corre até passar do herói
+    if (this.vilaoInvestindo) this.atualizarInvestida(delta);
+    if (this.fimDeJogo) return false;
+
+    // vilão: anda sozinho em direção ao herói, para perto dele e ataca.
+    // A velocidade, as distâncias e os golpes vêm da fase de cada vilão
+    const passo = (velocidade) => (velocidade * delta) / 1000;
+    const distancia = Math.abs(this.vilao.x - this.heroi.x);
+    const direcao = this.heroi.x < this.vilao.x ? -1 : 1;
+
+    if (this.vilaoEsquivando) {
+      // a animação de afundar e surgir cuida de tudo
+    } else if (this.vilaoBebendo) {
+      // bebendo a poção: parado e vulnerável até a animação acabar ou ser interrompida
+    } else if (this.vilaoBloqueando) {
+      // de braços cruzados: parado até o fim do bloqueio; o pisão vem logo depois
+    } else if (this.vilaoAtacando) {
+      // o ataque (ou o pulo) já está em andamento: não parar o vilão aqui
+    } else if (this.vilaoAnimando) {
+      // animação de dano ou de pouso em andamento: não trocar de animação nem andar
+    } else if (this.vilaoDesviando) {
+      // pulando para desviar de tiro: a animação do pulo cuida de tudo até ele pousar
+    } else if (this.vilaoRecuando) {
+      // boss da fase 2 recuando: anda para trás até poder lançar a bola (ou ficar encurralado na borda)
+      this.atualizarRecuo(delta);
+    } else if (this.podeEntrarEmFuria()) {
+      this.entrarEmFuria();
+    } else if (this.podeBeberPocao()) {
+      this.vilaoBeber();
+    } else if (this.podeBloquear()) {
+      this.vilaoParado();
+      this.vilaoBloquear();
+    } else if (!this.heroiNoAr && distancia <= this.cfg.distanciaAtaque && this.time.now >= this.vilaoProximoAtaque) {
+      this.vilaoParado();
+      this.vilaoAtacar();
+    } else if (this.podeAtirarBola()) {
+      this.vilaoParado();
+      this.vilaoAtacar({ nome: 'bola', golpe: this.cfg.golpes.bola });
+    } else if (this.podeInvestir()) {
+      this.vilaoParado();
+      this.vilaoAtacar({ nome: 'investida', golpe: this.cfg.golpes.investida });
+    } else if (distancia > this.cfg.distanciaLuta) {
+      this.vilao.x += direcao * passo(this.cfg.velocidade * this.multFuria('velocidade'));
+      this.vilao.play(this.animacaoAndar(), true);
+    } else {
+      this.vilaoParado();
+    }
+
+    // fúria do lobisomem: o corpo continua vermelho depois dos avisos e dos flashes de dano
+    this.manterCorFuria();
+
+    // os dois sempre de frente um para o outro
+    if (!this.vilaoAtacando) this.virarVilao(this.heroi.x < this.vilao.x);
+
+    return true;
+  }
+
   // animação de andar: a triste quando a vida está baixa (se a fase tiver)
+
+
   animacaoAndar() {
     const a = this.cfg.anims;
     const baixa = this.cfg.vidaBaixa;
