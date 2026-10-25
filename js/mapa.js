@@ -129,7 +129,7 @@ class MapaCaminho extends Phaser.Scene {
     });
 
     // botão para voltar à tela inicial; escalado pelo inverso do zoom para ficar legível
-    const botaoVoltar = this.add.text(larguraMapa / 2 - 40 / zoom, alturaMapa - 30, 'BACK', {
+    const botaoVoltar = this.add.text(larguraMapa / 2 - 80 / zoom, alturaMapa - 30, 'BACK', {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -140,7 +140,7 @@ class MapaCaminho extends Phaser.Scene {
     botaoVoltar.on('pointerdown', () => this.voltarInicio());
 
     // botão ENDING: mostra o final (a cena de quando se vence o último boss); ao terminar, volta para este mapa
-    const botaoFinal = this.add.text(larguraMapa / 2 + 45 / zoom, alturaMapa - 30, 'ENDING', {
+    const botaoFinal = this.add.text(larguraMapa / 2 - 12 / zoom, alturaMapa - 30, 'ENDING', {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -149,6 +149,17 @@ class MapaCaminho extends Phaser.Scene {
       padding: { x: 8, y: 3 }
     }).setOrigin(0.5).setScale(1 / zoom).setDepth(30).setInteractive({ useHandCursor: true });
     botaoFinal.on('pointerdown', () => this.abrirFinal());
+
+    // botão BESTIARY: abre o bestiário (os bosses, com a lenda e as dicas); ao sair, volta para este mapa
+    const botaoBestiario = this.add.text(larguraMapa / 2 + 68 / zoom, alturaMapa - 30, 'BESTIARY', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#ff8a00',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 3 }
+    }).setOrigin(0.5).setScale(1 / zoom).setDepth(30).setInteractive({ useHandCursor: true });
+    botaoBestiario.on('pointerdown', () => this.abrirBestiario());
 
     this.input.keyboard.once('keydown-ESC', () => this.voltarInicio());
   }
@@ -166,6 +177,14 @@ class MapaCaminho extends Phaser.Scene {
     }
 
     this.scene.start('CenaLuta', { fase: fase });
+  }
+
+  abrirBestiario() {
+    if (this.iniciando) return;
+    this.iniciando = true;
+
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Bestiario', { voltarPara: 'Mapa' }));
   }
 
   abrirFinal() {

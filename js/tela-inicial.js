@@ -56,7 +56,7 @@ class TelaInicial extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // botão de rankings, na parte de baixo da tela
-    const botaoRanking = this.add.text(256, 200, 'RANKINGS', {
+    const botaoRanking = this.add.text(190, 200, 'RANKINGS', {
       fontFamily: 'monospace',
       fontSize: '12px',
       fontStyle: 'bold',
@@ -66,12 +66,31 @@ class TelaInicial extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     botaoRanking.on('pointerdown', () => this.abrirRankings());
 
+    // botão do bestiário, ao lado do RANKINGS
+    const botaoBestiario = this.add.text(322, 200, 'BESTIARY', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      fontStyle: 'bold',
+      color: '#ff8a00',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    botaoBestiario.on('pointerdown', () => this.abrirBestiario());
+
     // toque na parte de cima começa a luta; a faixa de baixo é dos botões
     this.input.on('pointerdown', (ponteiro) => {
       if (ponteiro.y > 165) return;
       this.iniciarLuta();
     });
     this.input.keyboard.once('keydown-ENTER', () => this.iniciarLuta());
+  }
+
+  abrirBestiario() {
+    if (this.iniciando) return;
+    this.iniciando = true;
+
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Bestiario', { voltarPara: 'TelaInicial' }));
   }
 
   abrirRankings() {

@@ -28,9 +28,14 @@ class LutaVilaoGolpes {
   }
 
   // sorteia entre o corpo a corpo e o pisão, se a fase tiver pisão e a escolha for aleatória;
-  // a fase que tem chute (a segunda do boss) sorteia o chute com a chance dela
+  // a fase que tem ciclo (a segunda do boss) segue a ordem fixa dele, sem sorteio
   escolherGolpe() {
     const golpes = this.cfg.golpes;
+    if (golpes && golpes.ciclo) {
+      const nome = golpes.ciclo[this.cicloIdx % golpes.ciclo.length];
+      this.cicloIdx = (this.cicloIdx + 1) % golpes.ciclo.length;
+      return nome;
+    }
     if (golpes && golpes.chute && Math.random() < golpes.chanceChute) return 'chute';
     // de perto, a fase com investida (o lobisomem) às vezes dispara correndo em vez de dar a garrada
     if (golpes && golpes.investida && this.time.now >= this.vilaoProximaInvestida && Math.random() < golpes.investida.chancePerto) return 'investida';
@@ -56,6 +61,13 @@ class LutaVilaoGolpes {
   // forcado (opcional): { nome, golpe } para um golpe escolhido de fora, como o pisão logo depois do bloqueio
   vilaoAtacar(forcado = null) {
     const nome = forcado ? forcado.nome : this.escolherGolpe();
+
+    // o recuo do ciclo não é um golpe: ele só começa a andar para trás (a bola vem quando o recuo termina)
+    if (nome === 'recuo') {
+      this.vilaoIniciarRecuo();
+      return;
+    }
+
     const g = forcado ? forcado.golpe : this.golpe(nome);
     this.golpeAtual = g;
     this.golpeAtualNome = nome;
@@ -118,7 +130,19 @@ class LutaVilaoGolpes {
   // a bola de fogo sai da mão do vilão (no quadro do arremesso) e voa para o lado do herói
   vilaoDisparaBola(g, dir) {
     // som da bola de fogo saindo da mão, se a fase tiver (o boss)
-    if (this.cfg.sons && this.cfg.sons.bola) tocarSom(this, this.cfg.sons.bola);
+    if (this.cfg.sons && this.cfg.sons.bola && this.cache.audio.exists(this.cfg.sons.bola)) {
+      // o arquivo tem 6,1 s: toca só os primeiros ~1,5 s, com fade-out (começa em 1,1 s e dura 0,4 s)
+      const somBola = this.sound.add(this.cfg.sons.bola, { volume: 0.9 });
+      somBola.play();
+      this.time.delayedCall(1100, () => {
+        this.tweens.add({
+          targets: somBola,
+          volume: 0,
+          duration: 400,
+          onComplete: () => somBola.destroy()
+        });
+      });
+    }
 
     const tam = g.tamanho || 1;   // multiplicador do tamanho da bola (1 = o tamanho antigo)
     const bola = this.add.graphics().setDepth(16);
@@ -225,6 +249,43 @@ class LutaVilaoGolpes {
     this.vilao.x = Phaser.Math.Clamp(this.vilao.x + dirPara * avanco, 32, 480);
 
     this.finalizarGolpe();
+  }
+
+  // recuo do boss (fase 2): depois da rasteira ele anda para trás até ficar longe o bastante para a bola de fogo.
+  // O recuo termina sempre numa bola, que não conta como passo do ciclo
+  vilaoIniciarRecuo() {
+    this.vilaoRecuando = true;
+    this.vilao.clearTint();
+  }
+
+  // o recuo, quadro a quadro (chamado pelo update): longe o bastante, lança a bola; sem espaço atrás, pisca em chamas e lança a bola de lá
+  atualizarRecuo(delta) {
+    const r = this.cfg.golpes.recuo;
+    const bola = this.cfg.golpes.bola;
+    const alvo = bola.distanciaMin + r.folga;
+    const distancia = Math.abs(this.vilao.x - this.heroi.x);
+
+    if (distancia >= alvo) {
+      this.vilaoRecuando = false;
+      this.vilaoParado();
+      this.vilaoAtacar({ nome: 'bola', golpe: bola });
+      return;
+    }
+
+    const dir = this.vilao.x > this.heroi.x ? 1 : -1;   // para longe do herói
+    const proximo = this.vilao.x + dir * ((r.velocidade * delta) / 1000);
+    const encurralado = dir > 0 ? proximo >= 480 - r.margemBorda : proximo <= 32 + r.margemBorda;
+
+    if (encurralado) {
+      // sem espaço para recuar: o piscar em chamas (sem esperar o cooldown) o leva para trás do herói, e de lá ele lança a bola
+      this.vilaoRecuando = false;
+      this.vilaoParado();
+      this.vilaoEsquivar({ distancia: r.distanciaEsquiva, depois: () => this.vilaoAtacar({ nome: 'bola', golpe: bola }) });
+      return;
+    }
+
+    this.vilao.x = proximo;
+    this.vilao.play(this.animacaoAndar(), true);
   }
 
   // a fase tem investida, o herói está longe e já passou o tempo da última investida e do último ataque
@@ -346,7 +407,8 @@ class LutaVilaoGolpes {
     if (perto && livre && this.time.now >= this.vilaoProximaEsquiva) this.vilaoEsquivar();
   }
 
-  vilaoEsquivar() {
+  // opcoes (só no piscar em chamas): { distancia, depois }, para reaparecer mais longe do herói e fazer algo ao voltar
+  vilaoEsquivar(opcoes = {}) {
     tocarSom(this, 'esquiva');
 
     // se a animação de dano foi cortada, limpa o estado para ela não travar
@@ -355,7 +417,7 @@ class LutaVilaoGolpes {
 
     // fase com piscar em chamas (o boss): esquiva feita no código, sem sheet de afundar e surgir
     if (this.cfg.esquivaChamas) {
-      this.vilaoEsquivarChamas();
+      this.vilaoEsquivarChamas(opcoes);
       return;
     }
 
@@ -393,7 +455,7 @@ class LutaVilaoGolpes {
   }
 
   // piscar em chamas: o corpo vira uma silhueta laranja que esmaece em brasas e reaparece atrás do herói
-  vilaoEsquivarChamas() {
+  vilaoEsquivarChamas(opcoes = {}) {
     this.vilaoEsquivando = true;
     this.vilaoInvulneravel = true;   // enquanto some, o soco cai no vazio (MISS) e o tiro passa
     this.vilao.setTintFill(COR_CHAMA);
@@ -405,7 +467,7 @@ class LutaVilaoGolpes {
       if (this.fimDeJogo) return;
 
       const lado = this.vilao.x > this.heroi.x ? -1 : 1;
-      this.vilao.x = Phaser.Math.Clamp(this.heroi.x + lado * 110, 32, 480);
+      this.vilao.x = Phaser.Math.Clamp(this.heroi.x + lado * (opcoes.distancia || 110), 32, 480);
       this.brasas(this.vilao.x, CHAO_Y - 60);
 
       // volta com um clarão e fica vulnerável: é a hora de bater
@@ -418,6 +480,7 @@ class LutaVilaoGolpes {
         this.vilaoEsquivando = false;
         this.vilaoProximaEsquiva = this.time.now + this.cfg.cooldownEsquiva;
         this.vilaoProximoAtaque = this.time.now + 400;   // contra-ataque rápido
+        if (opcoes.depois) opcoes.depois();
       });
     });
   }

@@ -96,6 +96,8 @@ class CenaLuta extends Phaser.Scene {
     this.vilaoProximoDesvio = 0;   // quando o ogro pode desviar de novo (ms)
     this.vilaoInvestindo = false;  // true enquanto o lobisomem corre na investida (atravessa o herói)
     this.vilaoProximaInvestida = 0; // quando o lobisomem pode investir de novo (ms)
+    this.cicloIdx = 0;             // posição no ciclo de golpes da fase (o boss da fase 2)
+    this.vilaoRecuando = false;    // true enquanto o boss anda para trás para ganhar distância e lançar a bola (fase 2)
     this.vilaoEmFuria = false;     // true depois que o lobisomem entra na fúria (vermelho, mais rápido)
     this.furiaTransicao = false;   // true enquanto ele uiva e pisca em vermelho, parado
     this.vilaoFlashAte = 0;        // até quando dura o flash de dano (a cor da fúria espera ele acabar)
@@ -324,6 +326,9 @@ class CenaLuta extends Phaser.Scene {
       // animação de dano ou de pouso em andamento: não trocar de animação nem andar
     } else if (this.vilaoDesviando) {
       // pulando para desviar de tiro: a animação do pulo cuida de tudo até ele pousar
+    } else if (this.vilaoRecuando) {
+      // boss da fase 2 recuando: anda para trás até poder lançar a bola (ou ficar encurralado na borda)
+      this.atualizarRecuo(delta);
     } else if (this.podeEntrarEmFuria()) {
       this.entrarEmFuria();
     } else if (this.podeBeberPocao()) {
@@ -404,5 +409,5 @@ window.game = new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final, CutsceneBoss]
+  scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final, CutsceneBoss, Bestiario]
 });

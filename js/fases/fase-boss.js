@@ -65,7 +65,7 @@ const FASE_BOSS = {
   golpes: {
     intervalo: 1800,          // um ataque a cada 1,8 segundo
     corpo: {
-      dano: 30,
+      dano: 35,
       alcance: 110,
       desviaCom: ['agachar'],           // o soco só se defende agachando (pular leva o dano)
       aviso: 700,             // aviso laranja de 0,7 s (a animação a 10 fps chega no soco esticado nesse tempo)
@@ -75,7 +75,7 @@ const FASE_BOSS = {
     // bola de fogo: de longe (o herói pelo menos a distanciaMin), no lugar do soco.
     // Sai da mão no quadro 5 da animação, voa para o lado do herói e desce até a altura do peito dele
     bola: {
-      dano: 30,
+      dano: 35,
       aviso: 400,             // a animação a 10 fps chega no arremesso (quadro 5) nesse tempo
       distanciaMin: 170,      // só atira com o herói pelo menos tão longe
       velocidade: 220,        // pixels por segundo
@@ -286,6 +286,7 @@ const FASE_BOSS = {
     cam.flash(300, 255, 255, 255);
     cam.shake(400, 0.012);
     cena.anims.globalTimeScale = 0.5;
+    tocarSom(cena, 'boss-morte');
     cena.vilao.play(A.morte);
     cena.vilao.once('animationcomplete-' + A.morte, () => {
       cena.anims.globalTimeScale = 1;
@@ -465,9 +466,19 @@ const FASE_BOSS_2 = {
 
   golpes: {
     intervalo: 1500,          // um ataque a cada 1,5 segundo
-    chanceChute: 0.4,         // chance de o golpe corpo a corpo ser o chute em vez do soco
+    // ciclo fixo, sem sorteio: soco, soco, rasteira, recuo, e repete. O recuo termina sempre numa bola de fogo,
+    // que não conta como passo do ciclo. Defesas: soco agachando, rasteira pulando, bola agachando ou pulando
+    ciclo: ['corpo', 'corpo', 'chute', 'recuo'],
+    // recuo: anda para trás até ficar a distanciaMin da bola + folga do herói; sem espaço atrás (a menos de margemBorda
+    // da parede), pisca em chamas e reaparece a distanciaEsquiva atrás do herói, de onde lança a bola
+    recuo: {
+      velocidade: 90,         // pixels por segundo (o herói anda a 60)
+      folga: 20,              // pixels além da distanciaMin da bola
+      margemBorda: 30,        // distância da parede em que ele se considera encurralado
+      distanciaEsquiva: 220   // onde reaparece, atrás do herói, ao ser encurralado
+    },
     corpo: {
-      dano: 35,
+      dano: 45,
       alcance: 110,
       desviaCom: ['agachar'],   // o soco só se defende agachando (pular leva o dano)
       aviso: 700,
@@ -475,7 +486,7 @@ const FASE_BOSS_2 = {
     },
     // chute (rasteira): o herói só desvia pulando (agachar não adianta)
     chute: {
-      dano: 35,
+      dano: 40,
       alcance: 125,
       desviaCom: ['pulo'],
       aviso: 500,             // a animação a 10 fps chega na perna esticada nesse tempo
