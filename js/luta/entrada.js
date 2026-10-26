@@ -88,10 +88,15 @@ class LutaEntrada {
     this.emEntrada = false;
     this.emDialogo = false;
     this.emCombate = true;           // a partir daqui o vilão age e recebe dano
-    this.inicioLuta = this.time.now; // começa o cronômetro desta tentativa
 
-    // munição cheia no começo do combate (os tiros de teste da entrada não contam)
-    this.municao = this.cfg.tiro ? this.cfg.tiro.municao : 0;
+    // recomeço direto na fase 2 do boss: o cronômetro e as balas voltam como estavam no fim da fase 1; nas outras lutas, descarta o que sobrou
+    const sobras = this.cfg.recomecarAqui ? this.game.bossFase1Sobras : null;
+    if (!this.cfg.recomecarAqui) this.game.bossFase1Sobras = null;
+
+    this.inicioLuta = this.time.now - (sobras ? sobras.tempo : 0); // começa o cronômetro desta tentativa (já com o tempo da fase 1, se for o caso)
+
+    // munição cheia no começo do combate (os tiros de teste da entrada não contam); na fase 2 do boss, a que sobrou da fase 1
+    this.municao = sobras ? sobras.municao : (this.cfg.tiro ? this.cfg.tiro.municao : 0);
     this.atualizarMunicao();
 
     // marca a fase como vista, para a entrada não se repetir nas tentativas seguintes

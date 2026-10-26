@@ -39,6 +39,8 @@ class LutaPocaoHeroi {
   // o ícone da poção perto das munições, com o contador xN; tocar nele usa a poção (a tecla C também)
   criarBotaoPocao() {
     this.pocoes = this.cfg.pocaoHeroi ? (this.cfg.pocoes || 1) : 0;   // poções por tentativa (voltam se o herói perder e tentar de novo)
+    // exceto na fase 2 do boss: ali o herói volta com as poções que sobraram no fim da fase 1
+    if (this.cfg.recomecarAqui && this.game.bossFase1Sobras) this.pocoes = this.game.bossFase1Sobras.pocoes;
     this.heroiBebendo = false;
     this.curaHeroiBrilho = false;     // true durante o brilho verde da poção (a barra de vida lê isto)
     this.curaHeroiPiscaOn = false;

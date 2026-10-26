@@ -241,6 +241,9 @@ const FASE_BOSS = {
     cena.fimDeJogo = true;
     const pausaDesde = cena.time.now;   // o cronômetro da luta pausa daqui
 
+    // guarda o que o herói tinha ao fim da fase 1 (tempo, balas e poções): se ele morrer na fase 2, volta com isso (ver luta/entrada.js e luta/pocao-heroi.js)
+    cena.game.bossFase1Sobras = { tempo: pausaDesde - cena.inicioLuta, municao: cena.municao, pocoes: cena.pocoes };
+
     // limpa o que o boss estava fazendo (golpe, esquiva, pulo, bloqueio, poção) e o que estava voando
     cena.vilaoAtacando = false;
     cena.vilaoEsquivando = false;
