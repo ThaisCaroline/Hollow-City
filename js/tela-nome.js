@@ -53,24 +53,20 @@ class TelaNome extends Phaser.Scene {
     this.criarCampo();
   }
 
-  // cria o campo de texto HTML por cima do jogo, na posição do retângulo da tela de nome
+  // cria o campo de texto HTML por cima do jogo, na posição do retângulo da tela de nome.
+  // No celular, quando o teclado abre o campo sobe para o topo da área visível, para o teclado não cobrir o que a pessoa digita
   criarCampo() {
-    const r = this.game.canvas.getBoundingClientRect();
-    const escala = r.width / 512; // quanto o jogo foi ampliado ou reduzido na tela
+    this.noToque = window.matchMedia('(pointer: coarse)').matches;
 
     const campo = document.createElement('input');
     campo.type = 'text';
     campo.maxLength = 12;
     campo.placeholder = 'YOUR NAME';
     campo.autocomplete = 'off';
+    campo.enterKeyHint = 'go';   // o botão do teclado do celular vira "ir" e confirma o nome
     campo.style.cssText =
       `position: fixed;` +
-      `left: ${r.left + (256 - 110) * escala}px;` +
-      `top: ${r.top + (110 - 16) * escala}px;` +
-      `width: ${220 * escala}px;` +
-      `height: ${32 * escala}px;` +
       `font-family: monospace;` +
-      `font-size: ${16 * escala}px;` +
       `text-align: center;` +
       `color: #ffffff;` +
       `background: #000000;` +
@@ -81,14 +77,59 @@ class TelaNome extends Phaser.Scene {
 
     document.body.appendChild(campo);
     this.campoNome = campo;
+    this.campoNoTopo = false;
+    this.posicionarCampo();
 
     campo.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.confirmar();
     });
+
+    if (this.noToque) {
+      this.aoFocar = () => { this.campoNoTopo = true; this.posicionarCampo(); };
+      this.aoDesfocar = () => { this.campoNoTopo = false; this.posicionarCampo(); };
+      this.aoMexerViewport = () => { if (this.campoNoTopo) this.posicionarCampo(); };
+      campo.addEventListener('focus', this.aoFocar);
+      campo.addEventListener('blur', this.aoDesfocar);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', this.aoMexerViewport);
+        window.visualViewport.addEventListener('scroll', this.aoMexerViewport);
+      }
+    }
+
     campo.focus();
   }
 
+  // põe o campo no lugar: no retângulo do jogo, ou (teclado aberto no celular) no topo da área visível da tela
+  posicionarCampo() {
+    const campo = this.campoNome;
+    if (!campo) return;
+
+    if (this.campoNoTopo) {
+      const vv = window.visualViewport;
+      const larguraTela = vv ? vv.width : window.innerWidth;
+      const largura = Math.min(300, larguraTela - 24);
+      campo.style.left = `${(vv ? vv.offsetLeft : 0) + (larguraTela - largura) / 2}px`;
+      campo.style.top = `${(vv ? vv.offsetTop : 0) + 8}px`;
+      campo.style.width = `${largura}px`;
+      campo.style.height = '40px';
+      campo.style.fontSize = '20px';
+      return;
+    }
+
+    const r = this.game.canvas.getBoundingClientRect();
+    const escala = r.width / 512; // quanto o jogo foi ampliado ou reduzido na tela
+    campo.style.left = `${r.left + (256 - 110) * escala}px`;
+    campo.style.top = `${r.top + (110 - 16) * escala}px`;
+    campo.style.width = `${220 * escala}px`;
+    campo.style.height = `${32 * escala}px`;
+    campo.style.fontSize = `${16 * escala}px`;
+  }
+
   removerCampo() {
+    if (window.visualViewport && this.aoMexerViewport) {
+      window.visualViewport.removeEventListener('resize', this.aoMexerViewport);
+      window.visualViewport.removeEventListener('scroll', this.aoMexerViewport);
+    }
     if (this.campoNome && this.campoNome.parentNode) this.campoNome.remove();
     this.campoNome = null;
   }

@@ -14,11 +14,50 @@
     canvas {
       touch-action: none;
     }
+
+    /* aviso para girar o celular: só em aparelho de toque e só com a tela em pé (não bloqueia os toques) */
+    #aviso-girar {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: 6%;
+      transform: translateX(-50%);
+      z-index: 50;
+      pointer-events: none;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      color: #ffffff;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #ff8a00;
+      padding: 10px 16px;
+    }
+    @media (orientation: portrait) and (pointer: coarse) {
+      #aviso-girar { display: block; }
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <div id="aviso-girar">ROTATE YOUR DEVICE</div>
+  <script>
+    // celular: no primeiro toque entra em tela cheia e trava na horizontal (Android/Chrome; o iPhone não deixa, e lá só vale o aviso)
+    (function () {
+      if (!window.matchMedia('(pointer: coarse)').matches) return;
+      document.addEventListener('pointerup', function () {
+        const el = document.documentElement;
+        const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (!pedir) return;
+        Promise.resolve(pedir.call(el))
+          .then(function () {
+            if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
+          })
+          .catch(function () {});
+      }, { once: true });
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="js/firebase.js"></script>
   <script src="js/config.js"></script>
