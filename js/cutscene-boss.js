@@ -44,7 +44,7 @@ class CutsceneBoss extends Phaser.Scene {
     });
 
     // passo 3
-    this.load.image('cenario-boss-cheio', 'assets/cenario4b.png');
+    this.load.image('cenario-boss-cheio', 'assets/cenario4b.jpg');
     this.load.spritesheet('boss-idle', 'assets/BossFase1/boss_idle.png', {
       frameWidth: 128,
       frameHeight: 128
