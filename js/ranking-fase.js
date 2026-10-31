@@ -2,6 +2,7 @@
 
 // grava o tempo da luta vencida no ranking da fase, com a data da vitória e o identificador da run (chamado pelo K.O., em luta/vilao-dano.js)
 function registrarTempo(cena) {
+  if (!db) return;   // sem Firebase: a luta termina normalmente, só não grava
   db.collection('ranking').add({
     nome: cena.game.nomeJogador || 'ANON',
     fase: cena.fase + 1,                          // luta 1, 2, 3 ou 4
@@ -98,7 +99,11 @@ class RankingFase extends Phaser.Scene {
 
   // busca os tempos da fase no Firebase e mostra os 15 melhores
   carregarRanking(numero) {
-    db.collection('ranking').where('fase', '==', numero).get()
+    if (!db) {
+      this.listaEsq.setText('RANKING OFFLINE');
+      return;
+    }
+    comEspera(db.collection('ranking').where('fase', '==', numero).get())
       .then((snap) => {
         const todos = snap.docs
           .map((doc) => doc.data())
@@ -126,7 +131,7 @@ class RankingFase extends Phaser.Scene {
         const posicao = todos.filter((r) => r.tempo < meuTempo).length + 1;
         if (posicao > 15) this.mostrarPosicao(posicao);
       })
-      .catch(() => this.listaEsq.setText('ERROR LOADING RANKING'));
+      .catch(() => this.listaEsq.setText('RANKING OFFLINE'));
   }
 
   // a linha do jogador, em laranja, logo abaixo da coluna da direita: posição real, nome, tempo e a data de hoje

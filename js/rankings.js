@@ -63,13 +63,17 @@ class Rankings extends Phaser.Scene {
     this.lista1.setText('LOADING...');
     this.lista2.setText('');
 
-    db.collection('ranking').get()
+    if (!db) {
+      this.lista1.setText('RANKING OFFLINE');
+      return;
+    }
+    comEspera(db.collection('ranking').get())
       .then((snap) => {
         this.dados = snap.docs.map((doc) => doc.data());
         this.mostrarAba();
       })
       .catch(() => {
-        this.lista1.setText('ERROR LOADING RANKING');
+        this.lista1.setText('RANKING OFFLINE');
         this.lista2.setText('');
       });
   }
