@@ -330,14 +330,16 @@ class LutaPocaoHeroi {
   // balao (opcional): se vier, sai de cena junto com o aviso.
   esperarToque(aoTerminar, balao = null) {
     this.time.delayedCall(POCAO_PAUSA_AVISO, () => {
+      // negrito, contorno grosso e piscando só até a metade: continua legível sobre qualquer cenário
       const aviso = this.add.text(256, 130, POCAO_AVISO, {
         fontFamily: 'monospace',
         fontSize: '10px',
+        fontStyle: 'bold',
         color: '#ffffff',
         stroke: '#000000',
-        strokeThickness: 3
+        strokeThickness: 4
       }).setOrigin(0.5).setDepth(31);
-      this.tweens.add({ targets: aviso, alpha: 0.2, duration: 600, yoyo: true, repeat: -1 });
+      this.tweens.add({ targets: aviso, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
 
       let seguiu = false;
       const continuar = () => {

@@ -11,8 +11,20 @@ const BOTAO = {
   cima: { x: 425, y: 125, r: 20 },   // pulo (todas as fases)
   baixo: { x: 425, y: 180, r: 20 },  // agachar (só luta 2)
   tiro: { x: 470, y: 125, r: 17 },   // ataque especial (só luta 2)
-  soco: { x: 482, y: 185, r: 24 }    // ataque padrão, o maior
+  soco: { x: 482, y: 185, r: 24 },   // ataque padrão, o maior
+  dash: { x: 366, y: 190, r: 14 }    // dash (todas as fases), à esquerda do agachar
 };
+
+// dash: duas setas para a frente ('#' = pixel aceso)
+const SETA_DASH = [
+  "#...#....",
+  ".#...#...",
+  "..#...#..",
+  "...#...#.",
+  "..#...#..",
+  ".#...#...",
+  "#...#...."
+];
 
 // seta para baixo ('#' = pixel aceso)
 const SETA_BAIXO = [
@@ -74,7 +86,10 @@ function botaoToque(cena, pos, cor, chave) {
 
 function criarControlesDeToque(cena) {
   cena.input.addPointer(2); // permite tocar em mais de um botão ao mesmo tempo
-  cena.toque = { esquerda: false, direita: false, soco: false, pulo: false, agachar: false, tiro: false };
+  cena.toque = { esquerda: false, direita: false, soco: false, pulo: false, agachar: false, tiro: false, dash: false };
+
+  // no computador joga-se pelo teclado: os botões de toque nem aparecem (o mesmo critério da legenda da tela inicial)
+  if (cena.sys.game.device.os.desktop) return;
 
   // movimento (lado esquerdo)
   botaoSegurar(cena, BOTAO.esquerda, 0x444444, 'esquerda');
@@ -92,6 +107,10 @@ function criarControlesDeToque(cena) {
     botaoSegurar(cena, BOTAO.baixo, 0x3a7bd5, 'agachar');
     desenharIcone(cena, SETA_BAIXO, BOTAO.baixo.x, BOTAO.baixo.y, 2);
   }
+
+  // dash (todas as fases)
+  botaoToque(cena, BOTAO.dash, 0x2ec4d6, 'dash');
+  desenharIcone(cena, SETA_DASH, BOTAO.dash.x, BOTAO.dash.y, 2);
 
   // soco: ataque padrão, sempre o maior; com o soco inglês (luta 3 em diante) o ícone vira a mão com o soco inglês
   botaoToque(cena, BOTAO.soco, 0xff8a00, 'soco');

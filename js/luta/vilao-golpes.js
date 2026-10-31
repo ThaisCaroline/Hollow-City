@@ -73,6 +73,7 @@ class LutaVilaoGolpes {
 
   // o herói desvia do golpe se estiver em algum dos meios listados: pulando ou agachado
   desviadoPor(meios) {
+    if (this.heroiInvencivel()) return true;   // o dash desvia de qualquer golpe (luta/heroi.js)
     const lista = Array.isArray(meios) ? meios : [meios];
     return lista.some((meio) => {
       if (meio === 'pulo') return this.heroiAltura >= ALTURA_ESQUIVA;

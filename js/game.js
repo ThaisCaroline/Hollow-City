@@ -91,6 +91,7 @@ class CenaLuta extends Phaser.Scene {
     this.teclaPulo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.teclaTiro = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.teclaPocao = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+    this.teclaDash = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     criarControlesDeToque(this);
     this.criarBotaoPocao();   // o ícone da poção perto das munições (só nas lutas que dão a poção ao herói)
 

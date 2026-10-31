@@ -27,6 +27,14 @@ const DANO_TIRO_PRATA = 1.5;          // o tiro tira 50% a mais (no boss: 65 vir
 const COR_BALA = 0xffd23f;            // bala comum: amarela
 const COR_BALA_PRATA = 0xe8eef6;      // bala de prata
 
+// dash: avanço rápido com invencibilidade curta; desvia de qualquer golpe e atravessa o vilão
+const DASH_DISTANCIA = 80;            // pixels percorridos no dash
+const DASH_DURACAO = 180;             // ms do dash
+const DASH_INVENCIVEL_EXTRA = 120;    // ms de invencibilidade depois que o dash termina
+const DASH_COOLDOWN = 900;            // ms entre um dash e outro (contado do início)
+const DASH_RASTRO_MS = 45;            // ms entre uma sombra do rastro e a seguinte
+const COR_RASTRO = 0x7fd8ff;          // cor das sombras do rastro
+
 class LutaHeroi {
   // o estado do herói no começo de cada luta (chamado pelo create)
   iniciarEstadoHeroi() {
@@ -50,6 +58,12 @@ class LutaHeroi {
     this.emVirada = false;   // modo virada: o herói está abaixo de 30% de vida
     this.piscaOn = false;    // alterna a cor da barra do herói no modo virada
     this.socoAcertou = false;
+    this.heroiDash = false;      // true durante o dash
+    this.dashDir = 1;            // direção do dash (-1 = esquerda, 1 = direita)
+    this.dashAte = 0;            // quando o dash atual termina (ms)
+    this.proximoDash = 0;        // quando o herói pode dar outro dash (ms)
+    this.invencivelAte = 0;      // até quando os golpes do vilão não pegam (ms)
+    this.proximoRastro = 0;      // quando sai a próxima sombra do rastro (ms)
 
     // tiro: munição volta ao máximo a cada tentativa, e as balas ficam nesta lista
     this.tiros = [];
@@ -155,6 +169,69 @@ class LutaHeroi {
     this.heroiAgachado = false;
     this.heroi.stop();
     this.heroi.setTexture('heroi-andar', 0);
+  }
+
+  // dash: só no chão, fora de um golpe; vai para o lado da seta segurada ou, sem seta, para onde o herói olha (o vilão)
+  iniciarDash() {
+    if (this.heroiDash || this.heroiAtacando || this.heroiNoAr || this.heroiAgachado || this.heroiMorrendo || this.emDialogo) return;
+    if (this.time.now < this.proximoDash) return;
+
+    const esquerda = this.teclas.left.isDown || this.toque.esquerda;
+    const direita = this.teclas.right.isDown || this.toque.direita;
+    if (direita && !esquerda) this.dashDir = 1;
+    else if (esquerda && !direita) this.dashDir = -1;
+    else this.dashDir = this.heroi.flipX ? -1 : 1;
+
+    this.heroiDash = true;
+    this.heroiAtacando = true;   // trava andar, soco, tiro, pulo e poção durante o dash
+    this.dashAte = this.time.now + DASH_DURACAO;
+    this.invencivelAte = this.dashAte + DASH_INVENCIVEL_EXTRA;
+    this.proximoDash = this.time.now + DASH_COOLDOWN;
+    this.proximoRastro = 0;
+
+    this.heroi.stop();
+    this.heroi.setTexture('heroi-andar', POSE_PULO);
+    this.heroi.setFlipX(this.dashDir < 0);
+    tocarSom(this, 'esquiva');
+  }
+
+  // o dash, quadro a quadro: anda rápido e deixa sombras para trás
+  atualizarDash(delta) {
+    if (!this.heroiDash) return;
+
+    this.heroi.x += this.dashDir * (DASH_DISTANCIA / DASH_DURACAO) * delta;
+    // na entrada, o herói não passa do meio da tela (lá começa o diálogo)
+    if (this.emEntrada) this.heroi.x = Phaser.Math.Clamp(this.heroi.x, 32, 256);
+
+    if (this.time.now >= this.proximoRastro) {
+      this.proximoRastro = this.time.now + DASH_RASTRO_MS;
+      this.criarRastro();
+    }
+
+    if (this.time.now >= this.dashAte) this.terminarDash();
+  }
+
+  terminarDash() {
+    this.heroiDash = false;
+    this.heroiAtacando = false;
+    this.heroi.setTexture('heroi-andar', 0);
+  }
+
+  // uma sombra azulada do herói que some logo
+  criarRastro() {
+    const sombra = this.add.sprite(this.heroi.x, this.heroi.y, 'heroi-andar', POSE_PULO)
+      .setOrigin(0.5, HEROI_ORIGEM_Y)
+      .setScale(2)
+      .setFlipX(this.heroi.flipX)
+      .setTint(COR_RASTRO)
+      .setAlpha(0.55)
+      .setDepth(this.heroi.depth - 1);
+    this.tweens.add({ targets: sombra, alpha: 0, duration: 220, onComplete: () => sombra.destroy() });
+  }
+
+  // os golpes do vilão não pegam durante o dash (e um pouco depois)
+  heroiInvencivel() {
+    return this.time.now < this.invencivelAte;
   }
 
   // tiro: uma bala por toque, com munição limitada; a bala sai quando o braço está levantado
@@ -350,16 +427,17 @@ class LutaHeroi {
 
   // os dois se olham, não se atravessam no chão e não saem da tela (chamado pelo update, depois do vilão)
   ajustarCorpos() {
-    this.heroi.setFlipX(this.vilao.x < this.heroi.x);
+    // no dash, o herói olha para onde está indo; fora dele, olha para o vilão
+    this.heroi.setFlipX(this.heroiDash ? this.dashDir < 0 : this.vilao.x < this.heroi.x);
 
     // corpos: no chão, o herói e o vilão não se sobrepõem nem trocam de lado.
     // No ar, acima da altura de passagem, o herói pode cruzar por cima do vilão.
-    // Na investida, o lobisomem atravessa o herói: a regra fica desligada até ele parar.
+    // Na investida do lobisomem e no dash do herói, um atravessa o outro: a regra fica desligada até o movimento acabar.
     const margem = this.cfg.margemCorpo || 30;
     const passagem = this.cfg.alturaPassagem || 40;
     const xAntesRegra = this.heroi.x;
 
-    if (this.heroiAltura < passagem && !this.vilaoInvestindo) {
+    if (this.heroiAltura < passagem && !this.vilaoInvestindo && !this.heroiDash) {
       const dx = this.heroi.x - this.vilao.x;
       if (Math.abs(dx) >= 1) this.ladoHeroi = Math.sign(dx);
 
@@ -390,6 +468,12 @@ class LutaHeroi {
       this.toque.pocao = false;
       if (pediuPocao) this.usarPocaoHeroi();
     }
+
+    // dash: Shift ou o botão azul na tela
+    const pediuDash = Phaser.Input.Keyboard.JustDown(this.teclaDash) || this.toque.dash;
+    this.toque.dash = false;
+    if (pediuDash) this.iniciarDash();
+    this.atualizarDash(delta);
 
     // soco (e chute, no 3º ataque seguido)
     const pediuSoco = Phaser.Input.Keyboard.JustDown(this.teclaSoco) || this.toque.soco;

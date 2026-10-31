@@ -45,8 +45,8 @@ class TelaInicial extends Phaser.Scene {
     // legenda dos comandos: no teclado, todos; no celular (sem teclado), uma dica dos botões na tela
     const ehCelular = !this.sys.game.device.os.desktop;
     const legenda = ehCelular
-      ? 'USE THE ON-SCREEN BUTTONS\nLEFT: MOVE   RIGHT: JUMP AND ATTACK'
-      : 'ARROWS: MOVE   UP / SPACE: JUMP   DOWN: CROUCH\nZ: PUNCH   X: SHOOT   C: POTION';
+      ? 'USE THE ON-SCREEN BUTTONS\nLEFT: MOVE   RIGHT: JUMP, DASH AND ATTACK'
+      : 'ARROWS: MOVE   UP / SPACE: JUMP   DOWN: CROUCH   SHIFT: DASH\nZ: PUNCH   X: SHOOT   C: POTION';
     this.add.text(256, 174, legenda, {
       fontFamily: 'monospace',
       fontSize: '8px',

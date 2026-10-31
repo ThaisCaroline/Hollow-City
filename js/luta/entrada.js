@@ -7,6 +7,29 @@ class LutaEntrada {
     this.emEntrada = comEntrada; // true enquanto o herói entra e os diálogos acontecem
     this.emDialogo = false;
     this.emCombate = false;      // só fica true quando o vilão passa a agir e a receber dano
+
+    // primeira luta: uma dica piscando ensina que é preciso andar para a direita (some quando o herói anda)
+    this.dicaAndar = null;
+    if (comEntrada && this.fase === 0) {
+      this.dicaAndar = this.add.text(256, 120, 'MOVE RIGHT  >>>', {
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ff8a00',
+        stroke: '#000000',
+        strokeThickness: 4
+      }).setOrigin(0.5).setDepth(30);
+      this.tweens.add({ targets: this.dicaAndar, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
+    }
+  }
+
+  // a dica de andar some com fade
+  esconderDicaAndar() {
+    if (!this.dicaAndar) return;
+    const dica = this.dicaAndar;
+    this.dicaAndar = null;
+    this.tweens.killTweensOf(dica);
+    this.tweens.add({ targets: dica, alpha: 0, duration: 300, onComplete: () => dica.destroy() });
   }
 
   // o herói anda pela esquerda até o meio da tela; a cidade rola junto, mais devagar
@@ -35,6 +58,8 @@ class LutaEntrada {
     }
 
     this.fundo.tilePositionX += (this.heroi.x - xAntes) * 0.5;
+
+    if (this.heroi.x > 80) this.esconderDicaAndar();
 
     // chegou ao meio da tela: para e começa o diálogo
     if (this.heroi.x >= 256) this.iniciarDialogoHeroi();

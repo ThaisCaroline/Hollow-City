@@ -11,7 +11,7 @@ class Rankings extends Phaser.Scene {
   }
 
   init() {
-    this.abas = ['FULL RUN', 'FASE 1', 'FASE 2', 'FASE 3', 'FASE 4'];
+    this.abas = ['FULL RUN', 'FIGHT 1', 'FIGHT 2', 'FIGHT 3', 'FIGHT 4'];
     this.abaAtual = 0;
     this.dados = null;
   }
