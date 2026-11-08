@@ -1,0 +1,16 @@
+{
+  "name": "hollow-city",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hollow City - jogo de luta herói vs vilão",
+  "scripts": {
+    "build:www": "node scripts/copiar-www.js",
+    "sync": "npm run build:www && npx cap sync android",
+    "android": "npm run sync && npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  }
+}
