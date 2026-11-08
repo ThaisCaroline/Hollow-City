@@ -17,6 +17,23 @@ public class MainActivity extends BridgeActivity {
         esconderBarras();
     }
 
+    // Minimizar o app: pausa o WebView para a página ficar "oculta" e o Phaser pausar a música
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().onPause();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().onResume();
+        }
+    }
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
