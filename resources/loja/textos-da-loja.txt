@@ -1,0 +1,86 @@
+HOLLOW CITY: TEXTOS DA PLAY STORE
+Limites do Console: nome ate 30 caracteres; descricao curta ate 80; descricao completa ate 4000.
+Copie cada bloco (entre os marcadores) no campo correspondente. Cada idioma e uma traducao da loja (Portugues (Brasil) e Ingles).
+Sem spoilers: nada do Ramos nem do destino da Lucia.
+
+
+================================================================
+PORTUGUES (BRASIL)
+================================================================
+
+[NOME]
+Hollow City
+[/NOME]
+
+[DESCRICAO CURTA]
+Luta em pixel art noir: enfrente 4 chefes e traga o sol de volta a Hollow City.
+[/DESCRICAO CURTA]
+
+[DESCRICAO COMPLETA]
+Faz quatro meses que o sol não aparece em Hollow City. Nada cresce, o pão acabou e todo mundo está mais fraco a cada dia. Na noite passada, a sua esposa saiu de casa seguindo uma voz. Hoje, você vai buscá-la.
+
+Hollow City é um jogo de luta em pixel art, com clima de terror noir. Você é um detetive com um revólver e munição limitada, e vai abrir caminho pela cidade abandonada até o castelo de quem roubou a luz.
+
+O QUE VOCÊ VAI ENCONTRAR
+
+• 4 lutas contra chefes, cada um com golpes, pontos fracos e história própria: a Bruxa dos sussurros, o Ogro, o Lobisomem e o Devorador de Sol, que tem uma segunda forma.
+• Combate fácil de aprender e difícil de dominar: soco, tiro, pulo, agachar, dash com invencibilidade curta e poções de cura.
+• Bestiário com a lenda e as dicas para derrotar cada chefe.
+• Rankings online por luta e do jogo todo, para disputar o melhor tempo. Vença sem levar dano e ganhe o selo PERFEITO.
+• Uma história contada em cenas e diálogos, com um final que deixa perguntas.
+• Controles de toque pensados para o celular, na horizontal e em tela cheia.
+• Em português e em inglês: o jogo abre no idioma do seu aparelho, e você pode trocar na tela inicial.
+• Dá para jogar sem internet. Só o ranking precisa de conexão.
+
+Feito com carinho por Thais Carolyne e Cristiano Cardoso.
+[/DESCRICAO COMPLETA]
+
+[NOVIDADES DA VERSAO]
+Primeira versão do Hollow City.
+[/NOVIDADES DA VERSAO]
+
+
+================================================================
+ENGLISH
+================================================================
+
+[NAME]
+Hollow City
+[/NAME]
+
+[SHORT DESCRIPTION]
+Noir pixel-art brawler: beat four bosses and bring the sun back to Hollow City.
+[/SHORT DESCRIPTION]
+
+[FULL DESCRIPTION]
+It has been four months since the sun last rose over Hollow City. Nothing grows, the bread is gone, and everyone grows weaker every day. Last night, your wife followed a voice out of your home. Tonight, you bring her back.
+
+Hollow City is a pixel-art fighting game with a noir horror mood. You play a detective with a revolver and limited ammo, fighting your way through the abandoned city to the castle of whoever stole the light.
+
+WHAT YOU WILL FIND
+
+• 4 boss fights, each with its own moves, weak points and story: the whispering Witch, the Ogre, the Werewolf and the Sun Devourer, who has a second form.
+• Combat that is easy to learn and hard to master: punch, shoot, jump, crouch, a short-invincibility dash and healing potions.
+• A bestiary with the legend and combat tips for every boss.
+• Online rankings for each fight and for the full run, so you can chase the best time. Win without taking damage to earn the PERFECT stamp.
+• A story told through scenes and dialogue, with an ending that leaves questions.
+• Touch controls made for phones, in landscape and full screen.
+• In English and Portuguese: the game opens in your device language, and you can switch on the title screen.
+• You can play without internet. Only the rankings need a connection.
+
+Made with love by Thais Carolyne and Cristiano Cardoso.
+[/FULL DESCRIPTION]
+
+[WHAT'S NEW]
+First release of Hollow City.
+[/WHAT'S NEW]
+
+
+================================================================
+ANOTACOES PARA OS FORMULARIOS DO CONSOLE (sugestoes, confirmar no Console)
+================================================================
+- Categoria: Jogos > Acao.
+- Tags sugeridas: luta, pixel art, terror, indie (as opcoes mudam no Console).
+- O jogo nao tem anuncios nem compras no app (declarar isso nos formularios).
+- Dados que saem do aparelho: o nome digitado pelo jogador e os tempos das lutas, gravados no Firebase (ranking). Isso precisa constar na politica de privacidade e no formulario "Seguranca dos dados".
+- Classificacao indicativa: violencia de fantasia e clima de terror, sem sangue realista, sem linguagem pesada.
