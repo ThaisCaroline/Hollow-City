@@ -158,3 +158,14 @@ window.game = new Phaser.Game({
   },
   scene: [TelaInicial, TelaNome, MapaCaminho, CenaLuta, RankingFase, Rankings, Final, CutsceneBoss, Bestiario, Abertura]
 });
+
+// App Android: o WebView não avisa o jogo quando o app vai para segundo plano, então o MainActivity.java chama estas funções.
+// Elas disparam os mesmos eventos que o navegador dispararia ao trocar de aba: o Phaser suspende o áudio e para o relógio do jogo.
+window.pausarJogoNoApp = function () {
+  window.game.events.emit(Phaser.Core.Events.BLUR);
+  window.game.events.emit(Phaser.Core.Events.HIDDEN);
+};
+window.retomarJogoNoApp = function () {
+  window.game.events.emit(Phaser.Core.Events.FOCUS);
+  window.game.events.emit(Phaser.Core.Events.VISIBLE);
+};

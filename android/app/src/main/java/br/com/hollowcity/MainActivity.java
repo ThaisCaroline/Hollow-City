@@ -2,6 +2,7 @@ package br.com.hollowcity;
 
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.webkit.WebView;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -17,21 +18,27 @@ public class MainActivity extends BridgeActivity {
         esconderBarras();
     }
 
-    // Minimizar o app: pausa o WebView para a página ficar "oculta" e o Phaser pausar a música
+    // Minimizar o app: o WebView não avisa a página, então chamamos pausarJogoNoApp (js/game.js), que faz o Phaser
+    // suspender o áudio e parar o relógio. O WebView só é pausado depois que o script rodou.
     @Override
     public void onPause() {
         super.onPause();
-        if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().onPause();
-        }
+        final WebView web = webView();
+        if (web == null) return;
+        web.evaluateJavascript("window.pausarJogoNoApp && window.pausarJogoNoApp()", valor -> web.onPause());
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().onResume();
-        }
+        WebView web = webView();
+        if (web == null) return;
+        web.onResume();
+        web.evaluateJavascript("window.retomarJogoNoApp && window.retomarJogoNoApp()", null);
+    }
+
+    private WebView webView() {
+        return getBridge() != null ? getBridge().getWebView() : null;
     }
 
     @Override
