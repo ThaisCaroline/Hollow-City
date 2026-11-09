@@ -51,16 +51,30 @@ class Abertura extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5, 1).setAlpha(0).setDepth(2);
 
-    this.dica = this.add.text(504, 6, traduzir('ui.tocar_pular'), {
+    this.dica = this.add.text(8, 6, traduzir('ui.tocar_pular'), {
       fontFamily: 'monospace',
       fontSize: '8px',
       color: '#aaaaaa',
       stroke: '#000000',
       strokeThickness: 3
-    }).setOrigin(1, 0).setDepth(2);
+    }).setOrigin(0, 0).setDepth(2);
 
-    // toque ou Enter avança para a próxima tela
-    this.input.on('pointerdown', () => this.avancar());
+    // botão no canto: pula a abertura inteira e vai direto para o mapa
+    this.botaoPular = this.add.text(506, 4, traduzir('ui.pular_tudo'), {
+      fontFamily: 'monospace',
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      padding: { x: 6, y: 4 }
+    }).setOrigin(1, 0).setDepth(3).setInteractive({ useHandCursor: true });
+    this.botaoPular.on('pointerdown', () => this.pularTudo());
+
+    // toque ou Enter avança para a próxima tela (tocar no botão de pular tudo não conta)
+    this.input.on('pointerdown', (pointer, sobre) => {
+      if (sobre.length) return;
+      this.avancar();
+    });
     this.input.keyboard.on('keydown-ENTER', () => this.avancar());
     this.time.delayedCall(600, () => { this.podePular = true; });
 
@@ -99,6 +113,13 @@ class Abertura extends Phaser.Scene {
     }
 
     this.timer = this.time.delayedCall(slide.duracao, () => this.proximo());
+  }
+
+  // pula todas as telas de uma vez: sai direto para o mapa
+  pularTudo() {
+    if (this.trocando || !this.podePular) return;
+    if (this.timer) this.timer.remove();
+    this.sair();
   }
 
   avancar() {

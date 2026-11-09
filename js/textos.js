@@ -150,6 +150,7 @@ const TEXTOS = {
   // botões e avisos que se repetem
   'ui.voltar': { en: 'BACK', pt: 'VOLTAR' },
   'ui.tocar_pular': { en: 'TAP TO SKIP', pt: 'TOQUE PARA PULAR' },
+  'ui.pular_tudo': { en: 'SKIP ALL >>', pt: 'PULAR TUDO >>' },
   'ui.tocar_enter': { en: 'TAP OR ENTER', pt: 'TOQUE OU ENTER' },
   'ui.tocar_voltar': { en: 'TAP OR ENTER TO RETURN', pt: 'TOQUE OU ENTER PARA VOLTAR' },
   'ui.tocar_continuar_enter': { en: 'TAP OR ENTER TO CONTINUE', pt: 'TOQUE OU ENTER PARA CONTINUAR' },

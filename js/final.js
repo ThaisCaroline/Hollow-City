@@ -99,13 +99,24 @@ class Final extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(2);
 
     // a dica (TAP TO SKIP) fica no canto de cima, à direita
-    this.dica = this.add.text(504, 6, '', {
+    this.dica = this.add.text(8, 6, '', {
       fontFamily: 'monospace',
       fontSize: '8px',
       color: '#aaaaaa',
       stroke: '#000000',
       strokeThickness: 3
-    }).setOrigin(1, 0).setAlpha(0).setDepth(2);
+    }).setOrigin(0, 0).setAlpha(0).setDepth(2);
+
+    // botão no canto: pula todos os slides e vai direto para o THE END (some no último slide)
+    this.botaoPular = this.add.text(506, 4, traduzir('ui.pular_tudo'), {
+      fontFamily: 'monospace',
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      padding: { x: 6, y: 4 }
+    }).setOrigin(1, 0).setDepth(3).setInteractive({ useHandCursor: true });
+    this.botaoPular.on('pointerdown', () => this.pularTudo());
 
     // créditos (só aparecem no último slide)
     this.creditos = this.criarCreditos();
@@ -136,6 +147,7 @@ class Final extends Phaser.Scene {
   mostrarSlide(i) {
     const slide = SLIDES_FINAL[i];
     this.slideAtual = i;
+    this.botaoPular.setVisible(!slide.final);   // no último slide não há mais o que pular
 
     // troca a imagem: a anterior sai e a deste slide entra, se houver
     if (this.imagem) {
@@ -254,6 +266,13 @@ class Final extends Phaser.Scene {
         nome.on('pointerup', () => abrirLink(credito.url));
       });
     });
+  }
+
+  // pula todos os slides de uma vez e vai direto para o THE END (o último slide, com os créditos)
+  pularTudo() {
+    if (this.trocando || SLIDES_FINAL[this.slideAtual].final) return;
+    this.slideAtual = SLIDES_FINAL.length - 2;
+    this.proximo();
   }
 
   avancar() {
