@@ -75,7 +75,7 @@ class LutaVilaoDano {
 
     if (f.som) tocarSom(this, f.som);
     this.cameras.main.shake(f.tremor.duracao, f.tremor.forca);
-    flutuarTexto(this, this.vilao.x, this.vilao.y - 110, f.texto);
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 110, traduzir(f.texto));
 
     // pisca alternando a silhueta vermelha cheia e o vermelho da fúria
     let piscada = 0;
@@ -162,7 +162,7 @@ class LutaVilaoDano {
     this.vilaoGolpesNaPocao = 0;
     this.vilao.clearTint();
     this.vilao.play(nome);
-    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'POTION!');
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, traduzir('luta.pocao'));
     this.sussurrarAlmas();   // sussurro das almas quando ela bebe a poção
     this.vilao.once('animationcomplete-' + nome, () => this.fimPocao(false));
   }
@@ -186,7 +186,7 @@ class LutaVilaoDano {
 
     if (interrompida) {
       // poção derrubada: a vida não sobe e não tem brilho verde
-      flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'INTERRUPTED!');
+      flutuarTexto(this, this.vilao.x, this.vilao.y - 100, traduzir('luta.interrompido'));
       this.vilaoParado();
       return;
     }
@@ -195,7 +195,7 @@ class LutaVilaoDano {
     const cura = p.cura * this.vilaoVidaMax;
     this.vilaoVida = Math.min(this.vilaoVidaMax, this.vilaoVida + cura);
 
-    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'HEALED!');
+    flutuarTexto(this, this.vilao.x, this.vilao.y - 100, traduzir('luta.curado'));
     this.brilhoPocao(vidaAntes);   // também redesenha as barras
 
     this.vilaoParado();
@@ -293,7 +293,7 @@ class LutaVilaoDano {
 
       // sem ter levado nenhum dano na luta: o K.O. sobe um pouco e o PERFECT! aparece embaixo dele
       const perfeito = !this.heroiLevouDano;
-      this.add.text(256, perfeito ? 76 : 90, 'K.O.!!!!', {
+      this.add.text(256, perfeito ? 76 : 90, traduzir('luta.nocaute'), {
         fontFamily: 'monospace',
         fontSize: '44px',
         fontStyle: 'bold',
@@ -306,7 +306,7 @@ class LutaVilaoDano {
         // o som do PERFECT vem logo depois do som do K.O. (o texto aparece junto com o K.O.)
         this.time.delayedCall(500, () => tocarSom(this, 'perfect'));
 
-        this.add.text(256, 116, 'PERFECT!', {
+        this.add.text(256, 116, traduzir('luta.perfeito_ponto'), {
           fontFamily: 'monospace',
           fontSize: '20px',
           fontStyle: 'bold',

@@ -4,7 +4,7 @@
 // Os valores de vida, dano e alcance são um chute inicial: ajuste depois do teste.
 
 const FASE3 = {
-  rotuloVilao: 'WEREWOLF',   // nome que aparece na barra de vida do vilão
+  rotuloVilao: 'luta3.nome',   // nome que aparece na barra de vida do vilão
 
   cenario: 'assets/cenario-lobisomem-512.png',
   cenarioChave: 'cenario-lobisomem',
@@ -68,7 +68,7 @@ const FASE3 = {
     piscaMs: 120,            // tempo de cada piscada
     piscadas: 9,             // mudanças de cor (ímpar, para terminar na silhueta cheia antes de voltar ao vermelho)
     cor: 0xff6b6b,           // vermelho da fúria
-    texto: 'RAGE!',
+    texto: 'luta.furia',   // identificador em textos.js
     som: 'lobo-furia',       // uivo da fúria (2 s, com fade-out)
     tremor: { duracao: 400, forca: 0.01 },
     velocidade: 1.4,         // andar e correr na investida: 40% mais rápido

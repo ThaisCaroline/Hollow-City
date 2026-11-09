@@ -32,7 +32,7 @@ class RankingFase extends Phaser.Scene {
 
     this.add.rectangle(0, 0, 512, 224, 0x000000, 0.85).setOrigin(0, 0);
 
-    this.add.text(256, 14, `FIGHT ${numero} CLEARED`, {
+    this.add.text(256, 14, traduzir('ranking.concluida', { n: numero }), {
       fontFamily: 'monospace',
       fontSize: '18px',
       fontStyle: 'bold',
@@ -41,7 +41,7 @@ class RankingFase extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5, 0);
 
-    const textoTempo = this.add.text(256, 40, `YOUR TIME: ${formatarTempo(this.tempo)}`, {
+    const textoTempo = this.add.text(256, 40, traduzir('ranking.seu_tempo', { tempo: formatarTempo(this.tempo) }), {
       fontFamily: 'monospace',
       fontSize: '11px',
       color: '#ffffff'
@@ -49,7 +49,7 @@ class RankingFase extends Phaser.Scene {
 
     // sem ter levado dano na luta: PERFECT! amarelo e piscando ao lado do tempo
     if (this.perfeito) {
-      const perfect = this.add.text(textoTempo.x + textoTempo.width / 2 + 8, 40, 'PERFECT!', {
+      const perfect = this.add.text(textoTempo.x + textoTempo.width / 2 + 8, 40, traduzir('luta.perfeito_ponto'), {
         fontFamily: 'monospace',
         fontSize: '11px',
         fontStyle: 'bold',
@@ -58,7 +58,7 @@ class RankingFase extends Phaser.Scene {
       this.tweens.add({ targets: perfect, alpha: 0.25, duration: 450, yoyo: true, repeat: -1 });
     }
 
-    this.add.text(256, 60, `TOP 15 - FIGHT ${numero}`, {
+    this.add.text(256, 60, traduzir('ranking.top', { n: numero }), {
       fontFamily: 'monospace',
       fontSize: '9px',
       color: '#cccccc'
@@ -72,14 +72,14 @@ class RankingFase extends Phaser.Scene {
     };
 
     // duas colunas: 1 a 8 à esquerda, 9 a 15 à direita
-    this.listaEsq = this.add.text(16, 74, 'LOADING...', estilo).setOrigin(0, 0);
+    this.listaEsq = this.add.text(16, 74, traduzir('ui.carregando'), estilo).setOrigin(0, 0);
     this.listaDir = this.add.text(262, 74, '', estilo).setOrigin(0, 0);
 
     this.carregarRanking(numero);
 
     // o aviso para continuar só aparece depois de 1 s, para não pular a tela sem querer
     this.time.delayedCall(1000, () => {
-      const aviso = this.add.text(256, 205, 'TAP OR ENTER TO CONTINUE', {
+      const aviso = this.add.text(256, 205, traduzir('ui.tocar_continuar_enter'), {
         fontFamily: 'monospace',
         fontSize: '8px',
         color: '#aaaaaa'
@@ -100,7 +100,7 @@ class RankingFase extends Phaser.Scene {
   // busca os tempos da fase no Firebase e mostra os 15 melhores
   carregarRanking(numero) {
     if (!db) {
-      this.listaEsq.setText('RANKING OFFLINE');
+      this.listaEsq.setText(traduzir('ui.ranking_offline'));
       return;
     }
     comEspera(db.collection('ranking').where('fase', '==', numero).get())
@@ -111,7 +111,7 @@ class RankingFase extends Phaser.Scene {
         const melhores = todos.slice(0, 15);
 
         if (melhores.length === 0) {
-          this.listaEsq.setText('NO RECORDS YET');
+          this.listaEsq.setText(traduzir('ui.sem_registros'));
           return;
         }
 
@@ -131,7 +131,7 @@ class RankingFase extends Phaser.Scene {
         const posicao = todos.filter((r) => r.tempo < meuTempo).length + 1;
         if (posicao > 15) this.mostrarPosicao(posicao);
       })
-      .catch(() => this.listaEsq.setText('RANKING OFFLINE'));
+      .catch(() => this.listaEsq.setText(traduzir('ui.ranking_offline')));
   }
 
   // a linha do jogador, em laranja, logo abaixo da coluna da direita: posição real, nome, tempo e a data de hoje

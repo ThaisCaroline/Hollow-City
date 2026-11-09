@@ -12,7 +12,7 @@ class TelaNome extends Phaser.Scene {
     this.add.image(0, 0, 'cenario').setOrigin(0, 0);
     this.add.rectangle(0, 0, 512, 224, 0x000000, 0.6).setOrigin(0, 0);
 
-    this.add.text(256, 50, 'WHO IS PLAYING?', {
+    this.add.text(256, 50, traduzir('nome.quem_joga'), {
       fontFamily: 'monospace',
       fontSize: '20px',
       fontStyle: 'bold',
@@ -27,7 +27,7 @@ class TelaNome extends Phaser.Scene {
       color: '#ff6666'
     }).setOrigin(0.5);
 
-    const botao = this.add.text(256, 180, 'START', {
+    const botao = this.add.text(256, 180, traduzir('nome.comecar'), {
       fontFamily: 'monospace',
       fontSize: '16px',
       fontStyle: 'bold',
@@ -37,7 +37,7 @@ class TelaNome extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     botao.on('pointerdown', () => this.confirmar());
 
-    const voltar = this.add.text(256, 206, 'BACK', {
+    const voltar = this.add.text(256, 206, traduzir('ui.voltar'), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -61,7 +61,7 @@ class TelaNome extends Phaser.Scene {
     const campo = document.createElement('input');
     campo.type = 'text';
     campo.maxLength = 12;
-    campo.placeholder = 'YOUR NAME';
+    campo.placeholder = traduzir('nome.campo');
     campo.autocomplete = 'off';
     campo.enterKeyHint = 'go';   // o botão do teclado do celular vira "ir" e confirma o nome
     campo.style.cssText =
@@ -148,7 +148,7 @@ class TelaNome extends Phaser.Scene {
 
     const nome = this.campoNome ? this.campoNome.value.trim() : '';
     if (!nome) {
-      this.aviso.setText('ENTER A NAME');
+      this.aviso.setText(traduzir('nome.digite'));
       return;
     }
 

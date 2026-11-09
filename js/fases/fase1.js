@@ -1,7 +1,7 @@
 // Fase 1: a criatura mascarada (no lugar da bruxa). Tudo que é dela fica aqui: textos, cenário, sons, sprites, animações, golpes, poção, vida e movimento.
 
 const FASE1 = {
-  rotuloVilao: 'WITCH',    // nome que aparece na barra de vida do vilão
+  rotuloVilao: 'luta1.nome',    // nome que aparece na barra de vida do vilão
 
   cenario: 'assets/cenario-noite.png',
   cenarioChave: 'cenario',

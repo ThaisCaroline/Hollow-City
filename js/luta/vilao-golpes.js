@@ -536,7 +536,7 @@ class LutaVilaoGolpes {
   }
 
   mostrarEsquiva() {
-    flutuarTexto(this, this.heroi.x, this.heroi.y - 70, 'DODGE!');
+    flutuarTexto(this, this.heroi.x, this.heroi.y - 70, traduzir('luta.esquiva'));
   }
 
   desenharCorte(dir) {

@@ -87,8 +87,13 @@ const LUTAS = [
 
 // transforma segundos no texto que aparece na tela: "12.28 seconds" ou "1 minute 05.40 seconds"
 function formatarTempo(segundos) {
-  if (segundos < 60) return `${segundos.toFixed(2)} seconds`;
+  // em português o decimal é vírgula (12,28 segundos)
+  const numero = (valor, tamanho = 0) => {
+    const texto = valor.toFixed(2).padStart(tamanho, '0');
+    return idiomaAtual === 'pt' ? texto.replace('.', ',') : texto;
+  };
+  if (segundos < 60) return `${numero(segundos)} ${traduzir('tempo.segundos')}`;
   const min = Math.floor(segundos / 60);
-  const resto = (segundos - min * 60).toFixed(2).padStart(5, '0');
-  return `${min} ${min === 1 ? 'minute' : 'minutes'} ${resto} seconds`;
+  const resto = numero(segundos - min * 60, 5);
+  return `${min} ${traduzir(min === 1 ? 'tempo.minuto' : 'tempo.minutos')} ${resto} ${traduzir('tempo.segundos')}`;
 }

@@ -11,7 +11,7 @@ class Rankings extends Phaser.Scene {
   }
 
   init() {
-    this.abas = ['FULL RUN', 'FIGHT 1', 'FIGHT 2', 'FIGHT 3', 'FIGHT 4'];
+    this.abas = [traduzir('ranking.aba_geral'), ...[1, 2, 3, 4].map((n) => traduzir('ranking.aba_luta', { n }))];
     this.abaAtual = 0;
     this.dados = null;
   }
@@ -19,7 +19,7 @@ class Rankings extends Phaser.Scene {
   create() {
     this.add.rectangle(0, 0, 512, 224, 0x000000, 0.9).setOrigin(0, 0);
 
-    this.add.text(256, 8, 'RANKINGS', {
+    this.add.text(256, 8, traduzir('ranking.titulo'), {
       fontFamily: 'monospace',
       fontSize: '18px',
       fontStyle: 'bold',
@@ -45,7 +45,7 @@ class Rankings extends Phaser.Scene {
     this.lista1 = this.add.text(16, 66, '', estilo).setOrigin(0, 0);
     this.lista2 = this.add.text(262, 66, '', estilo).setOrigin(0, 0);
 
-    const voltar = this.add.text(256, 204, 'BACK', {
+    const voltar = this.add.text(256, 204, traduzir('ui.voltar'), {
       fontFamily: 'monospace',
       fontSize: '12px',
       fontStyle: 'bold',
@@ -60,11 +60,11 @@ class Rankings extends Phaser.Scene {
 
   // busca todos os registros uma vez; trocar de aba não refaz a consulta
   carregarDados() {
-    this.lista1.setText('LOADING...');
+    this.lista1.setText(traduzir('ui.carregando'));
     this.lista2.setText('');
 
     if (!db) {
-      this.lista1.setText('RANKING OFFLINE');
+      this.lista1.setText(traduzir('ui.ranking_offline'));
       return;
     }
     comEspera(db.collection('ranking').get())
@@ -73,7 +73,7 @@ class Rankings extends Phaser.Scene {
         this.mostrarAba();
       })
       .catch(() => {
-        this.lista1.setText('RANKING OFFLINE');
+        this.lista1.setText(traduzir('ui.ranking_offline'));
         this.lista2.setText('');
       });
   }
@@ -99,7 +99,7 @@ class Rankings extends Phaser.Scene {
     this.selos = [];
 
     if (linhas.length === 0) {
-      this.lista1.setText('NO RECORDS YET');
+      this.lista1.setText(traduzir('ui.sem_registros'));
       this.lista2.setText('');
       return;
     }

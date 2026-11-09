@@ -51,7 +51,7 @@ class Abertura extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5, 1).setAlpha(0).setDepth(2);
 
-    this.dica = this.add.text(504, 6, 'TAP TO SKIP', {
+    this.dica = this.add.text(504, 6, traduzir('ui.tocar_pular'), {
       fontFamily: 'monospace',
       fontSize: '8px',
       color: '#aaaaaa',

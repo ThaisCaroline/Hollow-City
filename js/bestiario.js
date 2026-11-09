@@ -1,7 +1,7 @@
 // Bestiário: um boss por página (imagem à esquerda, lenda e dicas à direita), com as setas ◀ ▶ para trocar de página.
-// Abre pela tela inicial e pelo mapa e volta para a tela de onde veio. Os textos ficam em inglês, como o resto do jogo.
+// Abre pela tela inicial e pelo mapa e volta para a tela de onde veio. Os textos (nome, lenda e dicas) vêm do textos.js, no idioma atual.
 // As imagens (150x200) ficam em assets/bestiario/; se alguma faltar, aparece uma caixa com "?" no lugar.
-// Nas dicas, {JUMP}, {DUCK}, {PUNCH}, {SHOOT} e {POTION} viram o desenho do botão do jogo seguido da palavra.
+// Nas dicas, {JUMP}, {DUCK}, {PUNCH}, {SHOOT} e {POTION} viram o desenho do botão do jogo seguido da palavra (botao.JUMP etc. no textos.js).
 
 const ICONE_BESTIARIO = 15;   // diâmetro (em pixels) do botão desenhado dentro das dicas
 
@@ -16,63 +16,13 @@ const BOTOES_BESTIARIO = {
 
 const ESTILO_CORPO = { fontFamily: 'monospace', fontSize: '9px', color: '#ffffff' };
 
+// um boss por página: o identificador (nome, lenda e dicas ficam em textos.js, como bestiario.<id>.nome, .lenda e .dicas) e a imagem
 const BESTIARIO = [
-  {
-    nome: 'WITCH',
-    imagem: 'witch',
-    lenda: 'No one has seen her face, only the cold orange glow of the mask. She drifts through the ruins of Hollow City at night, whispering names from the empty windows. Whoever follows the whisper is never seen again: their ghosts circle her flame, and the mask burns brighter for each one.',
-    dicas: [
-      '{JUMP} over her fireball strike.',
-      'When she sinks into the puddle, turn around: she rises behind you.',
-      '{PUNCH} her as she appears, and hit her twice while she drinks to spoil the potion.'
-    ]
-  },
-  {
-    nome: 'OGRE',
-    imagem: 'ogre',
-    lenda: 'Once a quiet brute of the slaughterhouse district, now he stalks the dead streets with a club that never dries. Bones rattle on his belt for every door he has broken. He roars the townsfolk out of hiding, and the abandoned church is where he drags them. Wherever he stomps, the cobblestones crack and the dogs fall silent.',
-    dicas: [
-      '{DUCK} or {JUMP} the club.',
-      '{JUMP} the stomp.',
-      'When he crosses his arms, stop punching: {SHOOT} him instead, and brace for a harder stomp.',
-      'He may leap over your bullets.'
-    ]
-  },
-  {
-    nome: 'WEREWOLF',
-    imagem: 'werewolf',
-    lenda: "By day, a thin and silent neighbor behind a boarded window. When the full moon rises, he crawls into the empty streets of the abandoned town, hunting anyone who dares to walk home alone. The claw marks on the doors of Hollow City are his signature, and only his master's whistle can call him back.",
-    dicas: [
-      '{DUCK} his claw swipe.',
-      '{JUMP} over his charge as he runs through you.',
-      'When he curls up, {SHOOT} him: punches fail.',
-      'Past half health he enters a RAGE, so stay sharp.'
-    ]
-  },
-  {
-    nome: 'SUN DEVOURER',
-    imagem: 'sun-devourer',
-    lenda: 'Long ago the sun went dark over Hollow City, and a black eclipse took its place on a throne of thorns. He feeds on light, warmth and hope. Every window that goes dark was a meal. He sends his beasts to empty the streets, then calls the survivors to his hall, one by one.',
-    dicas: [
-      '{DUCK} his punch.',
-      '{DUCK} or {JUMP} his fireballs.',
-      '{SHOOT} him from afar: you have 10 silver bullets.',
-      'He blinks in flames when you punch up close: strike as he reappears.',
-      'Drink your {POTION} when you need it.'
-    ]
-  },
-  {
-    nome: 'SUN DEVOURER: SECOND FORM',
-    imagem: 'sun-devourer-2',
-    lenda: 'When his shell breaks, the darkness does not die: it hardens. He rises in armor of black glass, veined with molten red, a crown of fire burning between his horns. The cracks in the street glow where he walks, and whatever still stands begins to burn.',
-    dicas: [
-      '{DUCK} his punch.',
-      '{JUMP} his sweep kick.',
-      'After the kick, he backs off to throw a fireball: {DUCK} or {JUMP}.',
-      'Corner him and he blinks in flames behind you.',
-      'Save a {POTION}, and {SHOOT} him while he backs off.'
-    ]
-  }
+  { id: 'bruxa', imagem: 'witch' },
+  { id: 'ogro', imagem: 'ogre' },
+  { id: 'lobisomem', imagem: 'werewolf' },
+  { id: 'devorador', imagem: 'sun-devourer' },
+  { id: 'devorador2', imagem: 'sun-devourer-2' }
 ];
 
 class Bestiario extends Phaser.Scene {
@@ -131,7 +81,7 @@ class Bestiario extends Phaser.Scene {
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    const voltar = this.add.text(478, 16, 'BACK', {
+    const voltar = this.add.text(478, 16, traduzir('ui.voltar'), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -192,7 +142,7 @@ class Bestiario extends Phaser.Scene {
     }
 
     // nome do boss
-    guardar(this.add.text(176, 9, p.nome, {
+    guardar(this.add.text(176, 9, traduzir(`bestiario.${p.id}.nome`), {
       fontFamily: 'monospace',
       fontSize: '12px',
       fontStyle: 'bold',
@@ -202,7 +152,7 @@ class Bestiario extends Phaser.Scene {
     }));
 
     // primeiro parágrafo: a lenda do boss
-    const lenda = guardar(this.add.text(176, 30, p.lenda, {
+    const lenda = guardar(this.add.text(176, 30, traduzir(`bestiario.${p.id}.lenda`), {
       ...ESTILO_CORPO,
       color: '#dddddd',
       wordWrap: { width: 324 },
@@ -211,7 +161,7 @@ class Bestiario extends Phaser.Scene {
     let y = lenda.y + lenda.height + 10;
 
     // segundo bloco: como combater, em lista (cada dica com o seu marcador)
-    for (const dica of p.dicas) {
+    for (const dica of traduzirLista(`bestiario.${p.id}.dicas`)) {
       y += this.escreverDica(176, y, dica, 324, guardar) + 3;
     }
 
@@ -232,8 +182,9 @@ class Bestiario extends Phaser.Scene {
     let usado = 0;
     for (const palavra of dica.split(' ')) {
       const m = palavra.match(/^\{(\w+)\}(.*)$/);
+      const rotulo = m ? traduzir(`botao.${m[1]}`) + m[2] : '';
       const item = m
-        ? { icone: m[1], texto: m[1] + m[2], largura: D + 3 + (m[1].length + m[2].length) * cw }
+        ? { icone: m[1], texto: rotulo, largura: D + 3 + rotulo.length * cw }
         : { texto: palavra, largura: palavra.length * cw };
 
       if (usado > 0 && usado + cw + item.largura > largura) {

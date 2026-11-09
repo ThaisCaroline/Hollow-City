@@ -10,8 +10,8 @@ function criarBarrasDeVida(cena) {
 
   const estilo = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff' };
   const larguraVilao = cena.cfg.barraLargura || 180;
-  cena.add.text(12, 22, 'HERO', estilo).setDepth(21);
-  cena.add.text(512 - 12 - larguraVilao, 22, cena.cfg.rotuloVilao, estilo).setDepth(21);
+  cena.add.text(12, 22, traduzir('luta.heroi'), estilo).setDepth(21);
+  cena.add.text(512 - 12 - larguraVilao, 22, traduzir(cena.cfg.rotuloVilao), estilo).setDepth(21);
 
   desenharBarras(cena);
 }
@@ -149,9 +149,9 @@ function mostrarFim(cena, titulo, subtitulo, cor) {
 
   // botões aparecem depois: PLAY AGAIN em cima, os outros dois embaixo
   cena.time.delayedCall(900, () => {
-    const botaoJogar = criarBotao(256, 128, 'PLAY AGAIN', '18px', { x: 14, y: 8 }, 10);
-    const botaoMapa = criarBotao(185, 182, 'BACK TO MAP', '12px', { x: 8, y: 7 }, 8);
-    const botaoDesistir = criarBotao(327, 182, 'TOO HARD?', '12px', { x: 8, y: 7 }, 8);
+    const botaoJogar = criarBotao(256, 128, traduzir('derrota.jogar'), '18px', { x: 14, y: 8 }, 10);
+    const botaoMapa = criarBotao(185, 182, traduzir('derrota.mapa'), '12px', { x: 8, y: 7 }, 8);
+    const botaoDesistir = criarBotao(327, 182, traduzir('derrota.dificil'), '12px', { x: 8, y: 7 }, 8);
 
     cena.tweens.add({ targets: botaoJogar, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
 
@@ -241,7 +241,7 @@ function selosPerfect(cena, texto, linhas, fontSize, lineSpacing) {
 
     const carimbo = cena.add.container(texto.x + (fimDoNome + inicioDoTempo) / 2, texto.y + i * passo + alturaLinha / 2).setAngle(-8).setDepth(5);
 
-    const palavra = cena.add.text(0, 0, 'PERFECT', {
+    const palavra = cena.add.text(0, 0, traduzir('luta.perfeito'), {
       fontFamily: 'monospace',
       fontSize: '6px',
       fontStyle: 'bold',

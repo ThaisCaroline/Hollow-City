@@ -20,7 +20,6 @@ const POCAO_DISTANCIA_PEGAR = 24;     // px: a que distância do item o herói p
 const POCAO_VELOCIDADE_ANDAR = 90;    // px por segundo: o herói andando até o item
 const POCAO_TOQUE_BALAO_MS = 500;     // ms: depois que o balão de pensamento aparece, o toque só vale a partir daqui (um toque solto não pula a fala)
 const POCAO_PAUSA_AVISO = 800;        // ms: do K.O. até aparecer o aviso para continuar
-const POCAO_AVISO = 'TAP OR ENTER TO CONTINUE';
 
 // usar a poção (animação heroi-beber: 6 quadros a 8 fps = 0,75 s)
 const POCAO_USO_QUADRO_CURA = 3;      // a cura sai no quadro 4 (índice 3), quando a garrafa chega à boca
@@ -105,7 +104,7 @@ class LutaPocaoHeroi {
     const antes = this.heroiVida;
     this.heroiVida = VIDA_HEROI;
     this.encerrarVirada();
-    flutuarTexto(this, this.heroi.x, this.heroi.y - 70, 'HEALED!');
+    flutuarTexto(this, this.heroi.x, this.heroi.y - 70, traduzir('luta.curado'));
     this.brilhoCuraHeroi(antes);
   }
 
@@ -265,7 +264,7 @@ class LutaPocaoHeroi {
       wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
-    const dica = this.add.text(0, 0, 'TAP TO CONTINUE', {
+    const dica = this.add.text(0, 0, traduzir('ui.tocar_continuar'), {
       fontFamily: 'monospace',
       fontSize: '8px',
       color: '#666666'
@@ -331,7 +330,7 @@ class LutaPocaoHeroi {
   esperarToque(aoTerminar, balao = null) {
     this.time.delayedCall(POCAO_PAUSA_AVISO, () => {
       // negrito, contorno grosso e piscando só até a metade: continua legível sobre qualquer cenário
-      const aviso = this.add.text(256, 130, POCAO_AVISO, {
+      const aviso = this.add.text(256, 130, traduzir('ui.tocar_continuar_enter'), {
         fontFamily: 'monospace',
         fontSize: '10px',
         fontStyle: 'bold',

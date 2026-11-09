@@ -31,7 +31,7 @@ class TelaInicial extends Phaser.Scene {
       strokeThickness: 6
     }).setOrigin(0.5);
 
-    const aviso = this.add.text(256, 130, 'TAP TO START', {
+    const aviso = this.add.text(256, 130, traduzir('inicio.tocar'), {
       fontFamily: 'monospace',
       fontSize: '16px',
       color: '#ffffff',
@@ -45,8 +45,8 @@ class TelaInicial extends Phaser.Scene {
     // legenda dos comandos: no teclado, todos; no celular (sem teclado), uma dica dos botões na tela
     const ehCelular = !this.sys.game.device.os.desktop;
     const legenda = ehCelular
-      ? 'USE THE ON-SCREEN BUTTONS\nLEFT: MOVE   RIGHT: JUMP, DASH AND ATTACK'
-      : 'ARROWS: MOVE   UP / SPACE: JUMP   DOWN: CROUCH   SHIFT: DASH\nZ: PUNCH   X: SHOOT   C: POTION';
+      ? traduzir('inicio.legenda_celular')
+      : traduzir('inicio.legenda_teclado');
     this.add.text(256, 174, legenda, {
       fontFamily: 'monospace',
       fontSize: '8px',
@@ -56,7 +56,7 @@ class TelaInicial extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // botão de rankings, na parte de baixo da tela
-    const botaoRanking = this.add.text(190, 200, 'RANKINGS', {
+    const botaoRanking = this.add.text(190, 200, traduzir('inicio.rankings'), {
       fontFamily: 'monospace',
       fontSize: '12px',
       fontStyle: 'bold',
@@ -67,7 +67,7 @@ class TelaInicial extends Phaser.Scene {
     botaoRanking.on('pointerdown', () => this.abrirRankings());
 
     // botão do bestiário, ao lado do RANKINGS
-    const botaoBestiario = this.add.text(322, 200, 'BESTIARY', {
+    const botaoBestiario = this.add.text(322, 200, traduzir('inicio.bestiario'), {
       fontFamily: 'monospace',
       fontSize: '12px',
       fontStyle: 'bold',
@@ -77,12 +77,34 @@ class TelaInicial extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     botaoBestiario.on('pointerdown', () => this.abrirBestiario());
 
-    // toque na parte de cima começa a luta; a faixa de baixo é dos botões
-    this.input.on('pointerdown', (ponteiro) => {
-      if (ponteiro.y > 165) return;
+    this.criarSeletorIdioma();
+
+    // toque na parte de cima começa a luta (menos nos botões de idioma); a faixa de baixo é dos botões
+    this.input.on('pointerdown', (ponteiro, sobre) => {
+      if (ponteiro.y > 165 || sobre.length) return;
       this.iniciarLuta();
     });
     this.input.keyboard.once('keydown-ENTER', () => this.iniciarLuta());
+  }
+
+  // seletor de idioma no canto de cima: EN e PT, o idioma atual em laranja. Ao trocar, a tela é refeita no novo idioma
+  criarSeletorIdioma() {
+    IDIOMAS.forEach((codigo, i) => {
+      const ativo = codigo === idiomaAtual;
+      const botao = this.add.text(470 + i * 26, 12, traduzir(`idioma.${codigo}`), {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        color: ativo ? '#ff8a00' : '#aaaaaa',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 3 }
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      botao.on('pointerdown', () => {
+        if (this.iniciando || codigo === idiomaAtual) return;
+        definirIdioma(codigo);
+        this.scene.restart();
+      });
+    });
   }
 
   abrirBestiario() {

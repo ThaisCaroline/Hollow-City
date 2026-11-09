@@ -90,7 +90,7 @@ class MapaCaminho extends Phaser.Scene {
       const pino = desenharPino(this, pos.x, pos.y, cor, escala);
 
       // nome do lugar e número da luta, em cima do pino (o nome vem do textos.js)
-      const etiqueta = this.add.text(pos.x, pos.y - 28 * escala, `${traduzir(`mapa.lugar${i + 1}`)}\nSTAGE ${i + 1}`, {
+      const etiqueta = this.add.text(pos.x, pos.y - 28 * escala, `${traduzir(`mapa.lugar${i + 1}`)}\n${traduzir('mapa.fase', { n: i + 1 })}`, {
         fontFamily: 'monospace',
         fontSize: `${Math.round(9 / zoom)}px`,
         fontStyle: 'bold',
@@ -100,8 +100,8 @@ class MapaCaminho extends Phaser.Scene {
         strokeThickness: Math.max(2, Math.round(2 / zoom))
       }).setOrigin(0.5, 1).setDepth(11);
 
-      // legenda em inglês, embaixo do pino
-      const legenda = feito ? 'CLICK TO REPLAY' : atual ? 'CLICK TO ENTER' : 'LOCKED';
+      // legenda embaixo do pino
+      const legenda = traduzir(feito ? 'mapa.repetir' : atual ? 'mapa.entrar' : 'mapa.trancado');
       const texto = this.add.text(pos.x, pos.y + 4 / zoom, legenda, {
         fontFamily: 'monospace',
         fontSize: `${Math.round(9 / zoom)}px`,
@@ -130,7 +130,7 @@ class MapaCaminho extends Phaser.Scene {
     });
 
     // botão para voltar à tela inicial; escalado pelo inverso do zoom para ficar legível
-    const botaoVoltar = this.add.text(larguraMapa / 2 - 80 / zoom, alturaMapa - 30, 'BACK', {
+    const botaoVoltar = this.add.text(larguraMapa / 2 - 80 / zoom, alturaMapa - 30, traduzir('ui.voltar'), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -141,7 +141,7 @@ class MapaCaminho extends Phaser.Scene {
     botaoVoltar.on('pointerdown', () => this.voltarInicio());
 
     // botão ENDING: mostra o final (a cena de quando se vence o último boss); ao terminar, volta para este mapa
-    const botaoFinal = this.add.text(larguraMapa / 2 - 12 / zoom, alturaMapa - 30, 'ENDING', {
+    const botaoFinal = this.add.text(larguraMapa / 2 - 12 / zoom, alturaMapa - 30, traduzir('mapa.final'), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',
@@ -152,7 +152,7 @@ class MapaCaminho extends Phaser.Scene {
     botaoFinal.on('pointerdown', () => this.abrirFinal());
 
     // botão BESTIARY: abre o bestiário (os bosses, com a lenda e as dicas); ao sair, volta para este mapa
-    const botaoBestiario = this.add.text(larguraMapa / 2 + 68 / zoom, alturaMapa - 30, 'BESTIARY', {
+    const botaoBestiario = this.add.text(larguraMapa / 2 + 68 / zoom, alturaMapa - 30, traduzir('inicio.bestiario'), {
       fontFamily: 'monospace',
       fontSize: '11px',
       fontStyle: 'bold',

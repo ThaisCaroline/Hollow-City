@@ -162,7 +162,7 @@ class Final extends Phaser.Scene {
       this.mostrarCreditos(2200);
 
       // o último slide espera o jogador tocar, para não sair sem querer
-      this.dica.setText('TAP OR ENTER TO RETURN').setColor('#ffffff').setAlpha(0);
+      this.dica.setText(traduzir('ui.tocar_voltar')).setColor('#ffffff').setAlpha(0);
       this.time.delayedCall(2500, () => {
         this.podeSair = true;
         this.tweens.add({ targets: this.dica, alpha: 1, duration: 600 });
@@ -173,7 +173,7 @@ class Final extends Phaser.Scene {
         .setAlpha(0);
       this.tweens.add({ targets: this.textoSlide, alpha: 1, duration: 800 });
 
-      this.dica.setText('TAP TO SKIP').setColor('#aaaaaa').setAlpha(1);
+      this.dica.setText(traduzir('ui.tocar_pular')).setColor('#aaaaaa').setAlpha(1);
       this.timer = this.time.delayedCall(slide.duracao, () => this.proximo());
     }
   }

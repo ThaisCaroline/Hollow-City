@@ -1,7 +1,7 @@
 // Fase 2: o ogro. Tudo que é dele fica aqui: textos, cenário, sons, sprites, animações, golpes, vida, movimento e morte.
 
 const FASE2 = {
-  rotuloVilao: 'OGRE',       // nome que aparece na barra de vida do vilão
+  rotuloVilao: 'luta2.nome',       // nome que aparece na barra de vida do vilão
 
   cenario: 'assets/ogro-cenario-v2.png',
   cenarioChave: 'cenario-ogro',

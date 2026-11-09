@@ -35,7 +35,7 @@ function mostrarDialogo(cena, nome, texto, aoFechar, retrato = RETRATO_HEROI, op
   }).setDepth(42);
   elementos.push(textoDialogo);
 
-  const dica = cena.add.text(470, topo + 62, 'TAP OR ENTER', {
+  const dica = cena.add.text(470, topo + 62, traduzir('ui.tocar_enter'), {
     fontFamily: 'monospace',
     fontSize: '8px',
     color: '#aaaaaa'

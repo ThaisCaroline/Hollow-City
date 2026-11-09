@@ -11,7 +11,7 @@ class LutaEntrada {
     // primeira luta: uma dica piscando ensina que é preciso andar para a direita (some quando o herói anda)
     this.dicaAndar = null;
     if (comEntrada && this.fase === 0) {
-      this.dicaAndar = this.add.text(256, 120, 'MOVE RIGHT  >>>', {
+      this.dicaAndar = this.add.text(256, 120, traduzir('luta.mova_direita'), {
         fontFamily: 'monospace',
         fontSize: '14px',
         fontStyle: 'bold',

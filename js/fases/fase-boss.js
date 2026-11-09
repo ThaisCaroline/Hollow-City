@@ -5,7 +5,7 @@
 // Os valores de vida, dano e alcance são um chute inicial: ajuste depois do teste.
 
 const FASE_BOSS = {
-  rotuloVilao: 'SUN DEVOURER',   // nome que aparece na barra de vida do vilão
+  rotuloVilao: 'luta4.nome',   // nome que aparece na barra de vida do vilão
 
   // cenário: o recorte de 512x224 do cenário da cutscene
   cenario: 'assets/cenario-boss-512.png',

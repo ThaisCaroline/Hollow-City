@@ -321,7 +321,7 @@ class LutaHeroi {
   }
 
   atualizarMunicao() {
-    if (this.textoMunicao) this.textoMunicao.setText(`AMMO ${this.municao}`);
+    if (this.textoMunicao) this.textoMunicao.setText(traduzir('luta.municao', { n: this.municao }));
   }
 
   danoNoHeroi(dano) {
@@ -377,7 +377,7 @@ class LutaHeroi {
       }
     });
 
-    const texto = this.add.text(this.heroi.x, this.heroi.y - 90, 'COMEBACK!', {
+    const texto = this.add.text(this.heroi.x, this.heroi.y - 90, traduzir('luta.virada'), {
       fontFamily: 'monospace',
       fontSize: '16px',
       fontStyle: 'bold',
@@ -421,7 +421,7 @@ class LutaHeroi {
     // o som de derrota toca junto com o texto GAME OVER
     this.heroi.once('animationcomplete', () => {
       tocarSom(this, 'morte-heroi');
-      mostrarFim(this, 'GAME OVER', null, '#e03030');
+      mostrarFim(this, traduzir('derrota.titulo'), null, '#e03030');
     });
   }
 
@@ -560,11 +560,11 @@ class LutaHeroi {
         this.socoAcertou = true;
         if (this.vilaoInvulneravel) {
           tocarSom(this, 'miss');
-          flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'MISS');
+          flutuarTexto(this, this.vilao.x, this.vilao.y - 100, traduzir('luta.errou'));
         } else if (this.vilaoBloqueando) {
           // o ogro está de braços cruzados: soco e chute não causam dano
           tocarSom(this, 'miss');
-          flutuarTexto(this, this.vilao.x, this.vilao.y - 100, 'BLOCKED');
+          flutuarTexto(this, this.vilao.x, this.vilao.y - 100, traduzir('luta.bloqueado'));
         } else if (emChute) {
           this.danoNoVilao(this.danoDoChute(), this.cfg.sons.dano);
         } else {
