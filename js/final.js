@@ -7,7 +7,7 @@ const SLIDES_FINAL = [
   { texto: 'final.2', imagem: 'assets/endgame/final-2.png', duracao: 5000 },
   { texto: 'final.3', imagem: 'assets/endgame/final-3.png', duracao: 4500 },
   { texto: 'final.4', imagem: 'assets/endgame/final-4.png', duracao: 4500 },
-  { texto: 'final.5', imagem: 'assets/endgame/final-5.png', duracao: 5500 },
+  { texto: 'final.5', imagem: 'assets/endgame/final-5.png', duracao: 7000 },
   { imagem: 'assets/endgame/final-6.png', final: true }
 ];
 

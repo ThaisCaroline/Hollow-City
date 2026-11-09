@@ -103,7 +103,7 @@ class LutaEntrada {
       ease: 'Linear',
       onComplete: () => {
         this.vilaoParado();
-        mostrarDialogo(this, traduzir(`luta${this.fase + 1}.nome`), traduzir(`luta${this.fase + 1}.vilao`), () => this.comecarCombate(), this.cfg.retrato);
+        mostrarDialogo(this, traduzir(`luta${this.fase + 1}.nome`), traduzir(`luta${this.fase + 1}.vilao`, { nome: this.game.nomeJogador || traduzir('final.amigo') }), () => this.comecarCombate(), this.cfg.retrato);
       }
     });
   }

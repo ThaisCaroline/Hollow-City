@@ -10,12 +10,12 @@ const SLIDES_ABERTURA = [
   {
     imagem: 'assets/abertura/abertura-2.png',
     texto: 'abertura.2',
-    duracao: 5200
+    duracao: 6200
   },
   {
     imagem: 'assets/abertura/abertura-3.png',
     texto: 'abertura.3',
-    duracao: 4200
+    duracao: 5400
   }
 ];
 

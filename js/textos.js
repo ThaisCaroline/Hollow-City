@@ -29,64 +29,64 @@ const TEXTOS = {
 
   // abertura (depois do nome, antes do mapa)
   'abertura.2': {
-    en: 'They took the sun, then my neighbors.\nSomeone is giving the orders.',
-    pt: 'Levaram o sol, depois os meus vizinhos.\nAlguém está dando as ordens.'
+    en: 'Four months without the sun. Nothing grows, the bread is gone, and everyone is weaker every day.',
+    pt: 'Faz quatro meses que não vemos o sol. Nada cresce, o pão acabou, e todo mundo está mais fraco a cada dia.'
   },
   'abertura.3': {
-    en: 'Tonight, it ends.',
-    pt: 'Esta noite, isso acaba.'
+    en: 'Last night, Lucia followed a voice out of our home. Tonight, I bring her back.',
+    pt: 'Ontem à noite, a Lúcia saiu de casa seguindo uma voz. Hoje, eu a trago de volta.'
   },
 
   // luta 1: a bruxa
   'luta1.nome': { en: 'WITCH', pt: 'BRUXA' },
   'luta1.detetive': {
-    en: 'I know those faces in your flame. Those were my neighbors. Who gives you orders?',
-    pt: 'Conheço esses rostos na sua chama. Eram os meus vizinhos. Quem dá as ordens a você?'
+    en: 'I followed your whisper all the way here. Where is my wife?',
+    pt: 'Segui o seu sussurro até aqui. Onde está a minha esposa?'
   },
   'luta1.vilao': {
-    en: 'I have whispered your name for weeks, detective. Some questions are better left unanswered.',
-    pt: 'Faz semanas que sussurro o seu nome, detetive. Algumas perguntas é melhor deixar sem resposta.'
+    en: 'I whispered her name, and she came, like all the others. Now I will whisper yours, {nome}.',
+    pt: 'Sussurrei o nome dela, e ela veio, como todos os outros. Agora vou sussurrar o seu, {nome}.'
   },
 
   'luta1.derrota': {
-    en: 'Do not look for them, detective... there is no one left to find...',
-    pt: 'Não procure por eles, detetive... não sobrou ninguém para encontrar...'
+    en: 'Do not hope, detective... everyone I call ends up at the church... and from the church, there is only the castle.',
+    pt: 'Não alimente esperança, detetive... todos que eu chamo acabam na igreja... e da igreja, só se vai ao castelo.'
   },
 
   // luta 2: o ogro
   'luta2.nome': { en: 'OGRE', pt: 'OGRO' },
   'luta2.detetive': {
-    en: "You dragged them to that church. I'll clean this city of every one of you!",
-    pt: 'Você os arrastou para aquela igreja. Vou limpar esta cidade de todos vocês!'
+    en: 'You herd them here like cattle. A woman in a yellow scarf: where is she?',
+    pt: 'Você junta todos aqui, feito gado. Uma mulher de cachecol amarelo: onde ela está?'
   },
   'luta2.vilao': {
-    en: 'Master said no one leaves. You small. You break easy.',
-    pt: 'O mestre disse que ninguém sai. Você é pequeno. Você quebra fácil.'
+    en: 'Master wants all of them. Nobody stays. You small. You break easy.',
+    pt: 'O mestre quer todos. Ninguém fica. Você é pequeno. Você quebra fácil.'
   },
   'luta2.derrota': {
-    en: 'Me fall... but master will find you...',
-    pt: 'Eu caio... mas o mestre vai achar você...'
+    en: 'Me fall... but the yellow one already at the castle... master will find you...',
+    pt: 'Eu caio... mas a de amarelo já foi pro castelo... o mestre vai achar você...'
   },
 
   // luta 3: o lobisomem
   'luta3.nome': { en: 'WEREWOLF', pt: 'LOBISOMEM' },
   'luta3.detetive': {
-    en: 'Another one of his beasts. I watched you slip out of that boarded house on Pine Street. You were my neighbor.',
-    pt: 'Mais uma das feras dele. Vi você saindo daquela casa com tábuas na Rua dos Pinheiros. Era meu vizinho.'
+    en: "Ramos was my partner. I watched you slip out of his boarded house on Pine Street. What did you do to him?",
+    pt: 'O Ramos foi meu parceiro. Vi você sair da casa dele, aquela com tábuas na Rua dos Pinheiros. O que você fez com ele?'
   },
   'luta3.vilao': {
-    en: 'I can smell your fear, detective... I do not remember my own name.',
-    pt: 'Sinto o cheiro do seu medo, detetive... Não lembro mais o meu próprio nome.'
+    en: 'Hihihi... Ramos? A scent I followed last night? Ramos... that name... I have heard it...',
+    pt: 'Hihihi... Ramos? Algum cheiro que eu segui ontem à noite? Ramos... esse nome... eu já ouvi...'
   },
   'luta3.derrota': {
-    en: 'The moon... will rise... again...',
-    pt: 'A lua... vai nascer... de novo...'
+    en: 'The moon... will rise... again... Get inside... I am afraid... of the moon... Ramos... I remember...',
+    pt: 'A lua... vai nascer... de novo... Entrem em casa... eu tenho medo... da lua... Ramos... eu me lembro...'
   },
 
   // itens: o pensamento do detetive ao pegar o que o vilão deixou cair (poção, soco inglês, balas de prata)
   'item.pocao': { en: 'This might come in handy.', pt: 'Isso pode ser útil.' },
   'item.soco': { en: 'He broke doors with these.', pt: 'Ele quebrava portas com isto.' },
-  'item.balas': { en: 'Silver... He knew what he was becoming.', pt: 'Prata... Ele sabia no que estava se tornando.' },
+  'item.balas': { en: "Silver, with the little cross Ramos scratched on his own rounds. He knew what he was becoming.", pt: 'Prata, com a cruzinha que o Ramos riscava nos seus cartuchos. Ele sabia no que estava se tornando.' },
 
   // mapa: o nome do lugar de cada luta
   'mapa.lugar1': { en: 'WHISPER ALLEY', pt: 'BECO DOS SUSSURROS' },
@@ -106,8 +106,8 @@ const TEXTOS = {
   },
   'final.4': { en: 'The sun is back...', pt: 'O sol voltou...' },
   'final.5': {
-    en: 'The survivors find their courage... and step outside, after so long...',
-    pt: 'Os sobreviventes tomam coragem... e saem de casa, depois de tanto tempo...'
+    en: 'The survivors find their courage and step outside, after so long... I search the crowd for a yellow scarf.',
+    pt: 'Os sobreviventes tomam coragem e saem para a rua, depois de tanto tempo... Procuro na multidão um cachecol amarelo.'
   },
   'final.fim': { en: 'THE END', pt: 'FIM' },
   'final.obrigado': { en: 'Thanks for playing, {nome}!', pt: 'Obrigado por jogar, {nome}!' },
@@ -125,12 +125,12 @@ const TEXTOS = {
     pt: 'Hmm... se você quer algo bem feito, tem que fazer você mesmo...'
   },
   'luta4.detetive': {
-    en: 'You took the sun, and my neighbors. Tonight, it ends.',
-    pt: 'Você levou o sol e os meus vizinhos. Esta noite, isso acaba.'
+    en: 'Give me back my wife, and the sun. Tonight, it ends.',
+    pt: 'Devolva a minha esposa, e devolva o sol. Esta noite, isso acaba.'
   },
   'luta4.vilao': {
-    en: 'Do your best, little human... Every light that faced me went out.',
-    pt: 'Faça o seu melhor, pequeno humano... Toda luz que me enfrentou se apagou.'
+    en: 'Do your best, little human. Her light is the warmest in my hall... Every light that faced me went out.',
+    pt: 'Faça o seu melhor, pequeno humano. A luz dela é a mais quente do meu salão... Toda luz que me enfrentou se apagou.'
   },
 
   // tela inicial
@@ -221,8 +221,8 @@ const TEXTOS = {
   // bestiário: nome, lenda e dicas de cada boss
   'bestiario.bruxa.nome': { en: 'WITCH', pt: 'BRUXA' },
   'bestiario.bruxa.lenda': {
-    en: 'No one has seen her face, only the cold orange glow of the mask. She drifts through the ruins of Hollow City at night, whispering names from the empty windows. Whoever follows the whisper is never seen again: their ghosts circle her flame, and the mask burns brighter for each one.',
-    pt: 'Ninguém viu o rosto dela, só o brilho laranja e frio da máscara. Ela flutua à noite pelas ruínas de Hollow City, sussurrando nomes das janelas vazias. Quem segue o sussurro nunca mais é visto: os fantasmas deles giram em volta da sua chama, e a máscara queima mais forte a cada um.'
+    en: 'No one has seen her face, only the cold orange glow of the mask. She drifts through the ruins of Hollow City at night, whispering the names of the people we love from empty windows. Whoever follows the whisper walks out alone and is never seen again: their names circle her flame, and the mask burns brighter for each one.',
+    pt: 'Ninguém viu o rosto dela, só o brilho laranja e frio da máscara. Ela flutua à noite pelas ruínas de Hollow City, sussurrando das janelas vazias os nomes de quem a gente ama. Quem segue o sussurro sai de casa sozinho e nunca mais é visto: os nomes deles giram em volta da sua chama, e a máscara queima mais forte a cada um.'
   },
   'bestiario.bruxa.dicas': {
     en: [
@@ -238,8 +238,8 @@ const TEXTOS = {
   },
   'bestiario.ogro.nome': { en: 'OGRE', pt: 'OGRO' },
   'bestiario.ogro.lenda': {
-    en: 'Once a quiet brute of the slaughterhouse district, now he stalks the dead streets with a club that never dries. Bones rattle on his belt for every door he has broken. He roars the townsfolk out of hiding, and the abandoned church is where he drags them. Wherever he stomps, the cobblestones crack and the dogs fall silent.',
-    pt: 'Antes um bruto calado do distrito do matadouro, agora ele percorre as ruas mortas com uma clava que nunca seca. Ossos chacoalham no cinto dele, um para cada porta que arrombou. Ele ruge e tira os moradores do esconderijo, e a igreja abandonada é para onde ele os arrasta. Onde ele pisa, as pedras racham e os cães se calam.'
+    en: 'Once a quiet brute of the slaughterhouse district, now he stalks the dead streets with a club that never dries. Bones rattle on his belt for every door he has broken. He roars the townsfolk out of hiding, and the abandoned church is where he herds them, to wait for the castle. Wherever he stomps, the cobblestones crack and the dogs fall silent.',
+    pt: 'Antes um bruto calado do distrito do matadouro, agora ele percorre as ruas mortas com uma clava que nunca seca. Ossos chacoalham no cinto dele, um para cada porta que arrombou. Ele ruge e tira os moradores do esconderijo, e a igreja abandonada é para onde ele os conduz, à espera do castelo. Onde ele pisa, as pedras racham e os cães se calam.'
   },
   'bestiario.ogro.dicas': {
     en: [
@@ -257,8 +257,8 @@ const TEXTOS = {
   },
   'bestiario.lobisomem.nome': { en: 'WEREWOLF', pt: 'LOBISOMEM' },
   'bestiario.lobisomem.lenda': {
-    en: "By day, a thin and silent neighbor behind a boarded window. When the full moon rises, he crawls into the empty streets of the abandoned town, hunting anyone who dares to walk home alone. The claw marks on the doors of Hollow City are his signature, and only his master's whistle can call him back.",
-    pt: 'De dia, um vizinho magro e calado atrás de uma janela vedada com tábuas. Quando a lua cheia nasce, ele rasteja pelas ruas vazias da cidade abandonada, caçando quem se atreve a voltar sozinho para casa. As marcas de garras nas portas de Hollow City são a assinatura dele, e só o assobio do mestre pode chamá-lo de volta.'
+    en: "By day, a thin and silent man behind a boarded window, who stopped answering at the station. When the full moon rises, he crawls into the empty streets of the abandoned town, hunting anyone who dares to walk home alone. The claw marks on the doors of Hollow City are his signature, and only his master's whistle can call him back.",
+    pt: 'De dia, um homem magro e calado atrás de uma janela vedada com tábuas, que parou de aparecer na delegacia. Quando a lua cheia nasce, ele rasteja pelas ruas vazias da cidade abandonada, caçando quem se atreve a voltar sozinho para casa. As marcas de garras nas portas de Hollow City são a assinatura dele, e só o assobio do mestre pode chamá-lo de volta.'
   },
   'bestiario.lobisomem.dicas': {
     en: [
@@ -276,8 +276,8 @@ const TEXTOS = {
   },
   'bestiario.devorador.nome': { en: 'SUN DEVOURER', pt: 'DEVORADOR DE SOL' },
   'bestiario.devorador.lenda': {
-    en: 'Long ago the sun went dark over Hollow City, and a black eclipse took its place on a throne of thorns. He feeds on light, warmth and hope. Every window that goes dark was a meal. He sends his beasts to empty the streets, then calls the survivors to his hall, one by one.',
-    pt: 'Há muito tempo o sol se apagou sobre Hollow City, e um eclipse negro tomou o lugar dele num trono de espinhos. Ele se alimenta de luz, calor e esperança. Cada janela que se apaga foi uma refeição. Ele manda as suas feras esvaziarem as ruas e depois chama os sobreviventes ao seu salão, um por um.'
+    en: 'Four months ago the sun went dark over Hollow City, and a black eclipse took its place on a throne of thorns. He feeds on light, warmth and hope, and keeps the taken alive in his hall so the meal lasts: first warm, then cold, then gone. His beasts empty the streets and bring them to him, one by one.',
+    pt: 'Há quatro meses o sol se apagou sobre Hollow City, e um eclipse negro tomou o lugar dele num trono de espinhos. Ele se alimenta de luz, calor e esperança, e mantém os levados vivos no salão para a refeição durar: primeiro quentes, depois frios, depois nada. As feras dele esvaziam as ruas e trazem todos até ele, um por um.'
   },
   'bestiario.devorador.dicas': {
     en: [
