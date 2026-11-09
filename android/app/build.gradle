@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Assinatura do release: as senhas ficam FORA do projeto e do OneDrive, em ~/chaves-hollowcity/signing.properties
+// (modelo em android/signing.properties.example). Sem esse arquivo, o release sai sem assinatura.
+def assinatura = new File(System.getProperty('user.home'), 'chaves-hollowcity/signing.properties')
+def assinaturaProps = new Properties()
+if (assinatura.exists()) {
+    assinatura.withInputStream { assinaturaProps.load(it) }
+}
+
 android {
     namespace = "br.com.hollowcity"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +24,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (assinatura.exists()) {
+                storeFile file(assinaturaProps['storeFile'])
+                storePassword assinaturaProps['storePassword']
+                keyAlias assinaturaProps['keyAlias']
+                keyPassword assinaturaProps['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (assinatura.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
