@@ -96,6 +96,7 @@ const TEXTOS = {
   'final.fim': { en: 'THE END', pt: 'FIM' },
   'final.obrigado': { en: 'Thanks for playing, {nome}!', pt: 'Obrigado por jogar, {nome}!' },
   'final.amigo': { en: 'friend', pt: 'jogador' },
+  'final.desenvolvido': { en: 'DEVELOPED BY', pt: 'DESENVOLVIDO POR' },
 
  // luta 4: o Sun Devourer (as falas da cutscene antes da luta e a fala de derrota)
   'luta4.derrota': {

@@ -11,6 +11,23 @@ const SLIDES_FINAL = [
   { imagem: 'assets/endgame/final-6.png', final: true }
 ];
 
+// créditos do último slide: cada nome abre o LinkedIn da pessoa ao ser tocado
+const CREDITOS_FINAL = [
+  { nome: 'Thais Carolyne', url: 'https://www.linkedin.com/in/thaiscarolyne01/' },
+  { nome: 'Cristiano Cardoso', url: 'https://www.linkedin.com/in/cristiano-cardoso1711/' }
+];
+
+// abre o link fora do jogo: na web numa nova aba; no app Android o Capacitor entrega ao navegador do celular
+function abrirLink(url) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 class Final extends Phaser.Scene {
   constructor() {
     super('Final');
@@ -90,8 +107,15 @@ class Final extends Phaser.Scene {
       strokeThickness: 3
     }).setOrigin(1, 0).setAlpha(0).setDepth(2);
 
-    // toque ou Enter avança o slide; no último, sai para a tela inicial
-    this.input.on('pointerdown', () => this.avancar());
+    // créditos (só aparecem no último slide)
+    this.creditos = this.criarCreditos();
+
+    // toque ou Enter avança o slide; no último, sai para a tela inicial.
+    // Tocar num crédito (objeto interativo) só abre o link e não sai da tela
+    this.input.on('pointerdown', (pointer, sobre) => {
+      if (sobre.length) return;
+      this.avancar();
+    });
     this.input.keyboard.on('keydown-ENTER', () => this.avancar());
 
     // remove os ouvintes e para a música quando a cena termina
@@ -135,6 +159,7 @@ class Final extends Phaser.Scene {
       this.textoObrigado.setText(traduzir('final.obrigado', { nome }));
       this.tweens.add({ targets: this.textoFim, alpha: 1, duration: 1200 });
       this.tweens.add({ targets: this.textoObrigado, alpha: 1, duration: 1000, delay: 1200 });
+      this.mostrarCreditos(2200);
 
       // o último slide espera o jogador tocar, para não sair sem querer
       this.dica.setText('TAP OR ENTER TO RETURN').setColor('#ffffff').setAlpha(0);
@@ -151,6 +176,84 @@ class Final extends Phaser.Scene {
       this.dica.setText('TAP TO SKIP').setColor('#aaaaaa').setAlpha(1);
       this.timer = this.time.delayedCall(slide.duracao, () => this.proximo());
     }
+  }
+
+  // monta a fileira de créditos no rodapé: DEVELOPED BY e, embaixo, [in] Nome  &  [in] Nome
+  // (tudo escondido; mostrarCreditos revela e liga o toque)
+  criarCreditos() {
+    const y = 207;
+    const ESPACO = 4;
+    const ENTRE = 8;
+    const contorno = { stroke: '#000000', strokeThickness: 3 };
+
+    const rotulo = this.add.text(256, 193, traduzir('final.desenvolvido'), {
+      fontFamily: 'monospace',
+      fontSize: '8px',
+      color: '#cccccc',
+      ...contorno
+    }).setOrigin(0.5);
+
+    const e = this.add.text(0, y, '&', {
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: '#ffffff',
+      ...contorno
+    }).setOrigin(0, 0.5);
+
+    const links = CREDITOS_FINAL.map((credito) => {
+      // selo azul do LinkedIn, o nome e um sublinhado para parecer link
+      const selo = this.add.text(0, y, 'in', {
+        fontFamily: 'monospace',
+        fontSize: '9px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        backgroundColor: '#0a66c2',
+        padding: { x: 2, y: 1 }
+      }).setOrigin(0, 0.5);
+      const nome = this.add.text(0, y, credito.nome, {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#8fd0ff',
+        ...contorno
+      }).setOrigin(0, 0.5);
+      const linha = this.add.rectangle(0, y + 8, nome.width, 1, 0x8fd0ff).setOrigin(0, 0.5);
+      return { credito, selo, nome, linha, largura: selo.width + ESPACO + nome.width };
+    });
+
+    // centraliza a fileira inteira
+    const total = links[0].largura + ENTRE + e.width + ENTRE + links[1].largura;
+    let x = 256 - total / 2;
+    links.forEach((item, i) => {
+      item.selo.x = x;
+      item.nome.x = x + item.selo.width + ESPACO;
+      item.linha.x = item.nome.x;
+      x += item.largura + ENTRE;
+      if (i === 0) {
+        e.x = x;
+        x += e.width + ENTRE;
+      }
+    });
+
+    const objetos = [rotulo, e];
+    links.forEach((item) => objetos.push(item.selo, item.nome, item.linha));
+    objetos.forEach((o) => o.setVisible(false).setDepth(2));
+    return { objetos, links, ESPACO };
+  }
+
+  // revela os créditos com fade e só então liga o toque nos nomes (área de toque maior que o texto, cobre o selo)
+  mostrarCreditos(atraso) {
+    const { objetos, links, ESPACO } = this.creditos;
+    this.time.delayedCall(atraso, () => {
+      objetos.forEach((o) => o.setAlpha(0).setVisible(true));
+      this.tweens.add({ targets: objetos, alpha: 1, duration: 800 });
+      links.forEach(({ credito, selo, nome }) => {
+        const area = new Phaser.Geom.Rectangle(
+          -(selo.width + ESPACO + 4), -6, selo.width + ESPACO + nome.width + 8, nome.height + 12
+        );
+        nome.setInteractive({ hitArea: area, hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+        nome.on('pointerup', () => abrirLink(credito.url));
+      });
+    });
   }
 
   avancar() {
